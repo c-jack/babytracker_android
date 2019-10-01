@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Baby Tracker</string>
+    <string name="action_settings">Settings</string>
+    <string name="baby_created_msg">Baby %s added</string>
+</resources>
