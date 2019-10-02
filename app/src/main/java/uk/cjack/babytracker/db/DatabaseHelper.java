@@ -26,11 +26,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // BABY Table - column names
-    public class BabyFeedEntry implements BaseColumns {
-        public static final String TABLE_NAME = "baby_feeds";
+    public class BabyActivityEntry implements BaseColumns {
+        public static final String TABLE_NAME = "baby_activity";
         public static final String BABY_COL = "baby";
-        public static final String FEED_DATE_COL = "feedDateTime";
-        public static final String FEED_AMOUNT_COL = "feedAmount";
+        public static final String ACTIVITY = "activity";
+        public static final String ACTIVITY_DATE_COL = "activityDateTime";
+        public static final String ACTIVITY_DATA_COL = "activityData";
     }
 
 
@@ -40,13 +41,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     BabyEntry._ID + " INTEGER PRIMARY KEY," +
                     BabyEntry.BABY_NAME_COL + " TEXT)";
 
-    private static final String CREATE_TABLE_FEEDS =
-            "CREATE TABLE " + BabyFeedEntry.TABLE_NAME + " ( "
-                    + BabyFeedEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + BabyFeedEntry.BABY_COL + " INTEGER NOT NULL, "
-                    + BabyFeedEntry.FEED_DATE_COL + " INTEGER NOT NULL, "
-                    + BabyFeedEntry.FEED_AMOUNT_COL + " INTEGER NOT NULL, "
-                    + "FOREIGN KEY(" + BabyFeedEntry.BABY_COL
+    private static final String CREATE_TABLE_ACTIVITY =
+            "CREATE TABLE " + BabyActivityEntry.TABLE_NAME + " ( "
+                    + BabyActivityEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + BabyActivityEntry.BABY_COL + " INTEGER NOT NULL, "
+                    + BabyActivityEntry.ACTIVITY + " TEXT NOT NULL, "
+                    + BabyActivityEntry.ACTIVITY_DATE_COL + " TEXT NOT NULL, "
+                    + BabyActivityEntry.ACTIVITY_DATA_COL + " TEXT NOT NULL, "
+                    + "FOREIGN KEY(" + BabyActivityEntry.BABY_COL
                     + ") REFERENCES " + BabyEntry.TABLE_NAME + " (babyid) ); ";
 
     public DatabaseHelper( final Context context ) {
@@ -58,17 +60,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // creating required tables
         db.execSQL( CREATE_TABLE_BABY );
-        db.execSQL( CREATE_TABLE_FEEDS );
+        db.execSQL( CREATE_TABLE_ACTIVITY );
     }
 
     @Override
     public void onUpgrade( final SQLiteDatabase db, final int oldVersion, final int newVersion ) {
         // on upgrade drop older tables
         db.execSQL( "DROP TABLE IF EXISTS " + BabyEntry.TABLE_NAME );
-        db.execSQL( "DROP TABLE IF EXISTS " + BabyFeedEntry.TABLE_NAME );
+        db.execSQL( "DROP TABLE IF EXISTS " + BabyActivityEntry.TABLE_NAME );
 
         // create new tables
         onCreate( db );
+    }
+
+    /**
+     * Delete stuff
+     * @param table
+     * @param where
+     * @return
+     */
+    public boolean delete( final String table, final String where)
+    {
+        final SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(table, where, null) > 0;
     }
 
     /**
@@ -77,7 +91,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
      * @param millis
      * @return
      */
-    public static Date millisToDate( int millis ) {
+    public static Date millisToDate( final long millis ) {
         return new Date( millis );
     }
 }

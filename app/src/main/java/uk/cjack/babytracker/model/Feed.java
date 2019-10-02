@@ -7,19 +7,22 @@ import java.util.Date;
 import java.util.Locale;
 
 public class Feed implements Serializable, Comparable<Feed> {
+    private String feedId;
     private int babyId;
     private Date feedDateTime;
     private String feedDate;
     private String feedTime;
     private long feedAmount;
 
-    private static final String DATE_FORMAT = "d MMM yyyy";
+    private static final String DATE_FORMAT = "EEEE d MMM yyyy";
     private static final String TIME_FORMAT = "HH:mm a";
 
-    public Feed( final int babyId, final Date feedDate, final long feedAmount) {
+    public Feed( final String feedDbId, final int babyId, final Date feedDate, final long feedAmount ) {
+        this.feedId = feedDbId;
         this.babyId = babyId;
         this.feedDateTime = feedDate;
         this.feedAmount = feedAmount;
+
         setFeedDateTimeValues();
     }
 
@@ -32,6 +35,9 @@ public class Feed implements Serializable, Comparable<Feed> {
         this.feedTime = timeFormat.format( this.feedDateTime );
     }
 
+    public int getFeedId() {
+        return Integer.parseInt( feedId );
+    }
 
     public int getBabyId() {
         return babyId;
