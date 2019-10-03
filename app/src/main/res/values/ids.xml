@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="fab_feed" type="id" />
+    <item name="fab_change" type="id" />
+    <item name="fab_temp" type="id" />
+    <item name="fab_med" type="id" />
+    <item name="fab_sleep" type="id" />
+    <item name="fab_vomit" type="id" />
+</resources>

@@ -65,18 +65,21 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
 
         // Set item views based on your views and data model
         final TextView feedAmountTextView = viewHolder.activityValueTextView;
-        feedAmountTextView.setText( String.valueOf( activity.getActivityValue() ) );
         final TextView feedTimeTextView = viewHolder.activityTimeTextView;
-        feedTimeTextView.setText( activity.getActivityTime() );
         final ImageView activityIcon = viewHolder.activityIconTextView;
-        if ( activity.getActivityType() != null ) {
+
+        final Activity.ActivityEnum activityType = activity.getActivityType();
+        if ( activityType != null ) {
             final int drawableActivityIcon;
-            switch ( activity.getActivityType() ) {
+            switch ( activityType ) {
                 case FEED:
                     drawableActivityIcon = R.drawable.feed;
+                    final String feedAmount = activity.getActivityValue() + activityType.getUnit();
+                    feedAmountTextView.setText( feedAmount );
                     break;
                 case CHANGE:
                     drawableActivityIcon = R.drawable.nappy;
+                    feedAmountTextView.setText( String.valueOf( activity.getActivityValue() ) );
                     break;
                 default:
                     drawableActivityIcon = R.drawable.unknown;
@@ -84,6 +87,7 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
             }
             activityIcon.setImageResource( drawableActivityIcon );
         }
+        feedTimeTextView.setText( activity.getActivityTime() );
 
     }
 
@@ -93,6 +97,10 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         return mActivityList.size();
     }
 
+
+    /**
+     * @param activityList
+     */
     public void notify( final List<Activity> activityList ) {
         if ( mActivityList != null ) {
             mActivityList.clear();

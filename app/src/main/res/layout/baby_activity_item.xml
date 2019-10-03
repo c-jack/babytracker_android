@@ -16,7 +16,6 @@
         android:gravity="clip_horizontal|center|clip_vertical|center_horizontal"
         android:maxLength="5"
         android:maxLines="1"
-        android:numeric="integer"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/activityTime" />
@@ -25,13 +24,12 @@
         android:id="@+id/activityTime"
         android:layout_width="217dp"
         android:layout_height="28dp"
-        android:layout_marginStart="40dp"
+        android:layout_marginStart="8dp"
         android:layout_marginBottom="4dp"
         android:gravity="clip_horizontal|clip_vertical|center_vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/feedAmount"
-        app:layout_constraintHorizontal_bias="0.4"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toEndOf="@+id/activityIcon" />
 
     <TextView
         android:id="@+id/activityDate"
@@ -49,9 +47,9 @@
 
     <ImageView
         android:id="@+id/activityIcon"
-        android:layout_width="31dp"
-        android:layout_height="25dp"
-        android:layout_marginStart="4dp"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginStart="8dp"
         android:layout_marginBottom="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

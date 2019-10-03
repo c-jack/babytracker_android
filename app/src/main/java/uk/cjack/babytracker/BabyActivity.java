@@ -7,18 +7,20 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.res.ResourcesCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.leinardi.android.speeddial.SpeedDialActionItem;
+import com.leinardi.android.speeddial.SpeedDialView;
+import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
+import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -30,25 +32,36 @@ import uk.cjack.babytracker.model.Baby;
 
 import static android.content.DialogInterface.BUTTON_NEGATIVE;
 import static android.content.DialogInterface.BUTTON_POSITIVE;
+import static uk.cjack.babytracker.model.Activity.getDateStringFromDate;
+import static uk.cjack.babytracker.model.Activity.getTimeFromDate;
+import static uk.cjack.babytracker.utils.BabyTrackerUtils.isToday;
 
-public class BabyActivity extends BaseActivity implements AlertDialog.OnClickListener {
+public class BabyActivity extends BaseActivity implements AlertDialog.OnClickListener,
+        DatePickerDialog.OnDateSetListener,
+        TimePickerDialog.OnTimeSetListener {
 
     public static final String SELECTED_BABY = "uk.cjack.babytracker.selected_baby";
+    public static final String TITLE = "%s's Activity";
 
     private RecyclerView mActivityListView;
     private ActivityAdapter activityAdapter;
     private Baby mSelectedBaby;
     private TextView dateField;
+    private TextView feedDaySelect;
+    private TextView timeField;
     private TextView amountField;
-    private RadioGroup selectedActivity;
+    private TextView activityIdField;
+    private Activity.ActivityEnum activityToAdd;
     private AlertDialog mDialog;
     private List<Activity> mActivities;
+
+    private DatePickerDialog datePickerDialog;
+    private TimePickerDialog timePickerDialog;
 
 
     @Override
     protected void onCreate( final Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
-
 
         // Set initial page on load
         setContentView( R.layout.baby_screen );
@@ -57,13 +70,11 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         final Baby selectedBaby = ( Baby ) getIntent().getSerializableExtra( SELECTED_BABY );
         if ( selectedBaby != null ) {
             mSelectedBaby = selectedBaby;
-            selectedBabyNameText.setText( mSelectedBaby.getBabyName() );
+            selectedBabyNameText.setText( String.format( TITLE, mSelectedBaby.getBabyName() ) );
         }
-
 
         // Get ListView
         mActivityListView = findViewById( R.id.feedListView );
-
 
         // Initialize contacts
         updateActivityList();
@@ -72,82 +83,280 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         mActivityListView.setAdapter( activityAdapter );
         mActivityListView.setLayoutManager( new LinearLayoutManager( this ) );
 
-        // Set floating button
-        final FloatingActionButton fab = findViewById( R.id.fab );
-        fab.setOnClickListener( new View.OnClickListener() {
-            @Override
-            public void onClick( final View view ) {
-                createAndShowNewActivityDialog();
-            }
-        } );
+        // Add SpeedView items
+        final SpeedDialView speedDialView = addSpeedViewItems();
+        speedDialView.setOnActionSelectedListener( speedViewOnSelect() );
 
     }
 
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *
+     * ACTIVITY DIALOG BUILDER
+     *
+     * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
     /**
      * Creates and shows the new activity dialog
+     *
+     * @param item
      */
-    private void createAndShowNewActivityDialog() {
+    private void createAndShowActivityDialog( final MenuItem item ) {
+
+        // Set initial values
+        final Date now = new Date();
+        final int babyActivity;
+        Integer activityDbId = null;
+        String addOrSaveButtonText = "Add";
+        long millisTimeValue = now.getTime();
+        final Calendar initialTime = Calendar.getInstance();
+        String amount = "";
+
+        if ( item != null ) {
+            final Activity thisActivity =
+                    mActivities.stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
+
+            if ( thisActivity != null ) {
+                activityToAdd = thisActivity.getActivityType();
+                addOrSaveButtonText = "Save";
+                millisTimeValue = thisActivity.getActivityDateTime().getTime();
+                amount = thisActivity.getActivityValue();
+                activityDbId = thisActivity.getActivityId();
+            }
+        }
+        initialTime.setTimeInMillis( millisTimeValue );
+
+
+        /*
+         * Set the view based on the activity
+         */
+        if ( activityToAdd.equals( Activity.ActivityEnum.FEED ) ) {
+            babyActivity = R.layout.baby_feed_activity;
+        }
+        else {
+            babyActivity = R.layout.baby_add_activity;
+        }
+
+        /*
+         * Build the dialog
+         */
         final AlertDialog dialog = new AlertDialog.Builder( this )
-                .setTitle( "Add a new activity" )
-                .setView( R.layout.baby_add_activity )
-                .setPositiveButton( "Add", this )
+                .setView( babyActivity )
+                .setPositiveButton( addOrSaveButtonText, this )
                 .setNegativeButton( "Cancel", null )
                 .create();
         dialog.show();
 
         mDialog = dialog;
-        final Date now = new Date();
 
+        /*
+         * Set the fields in the pop-up dialog
+         */
         dateField = dialog.findViewById( R.id.activityDate );
-        dateField.setText( String.valueOf( now.getTime() ) );
-
+        timeField = dialog.findViewById( R.id.activityTimeSelect );
+        feedDaySelect = dialog.findViewById( R.id.activityDaySelect );
         amountField = dialog.findViewById( R.id.activityValue );
-        selectedActivity = dialog.findViewById( R.id.activitySelect );
+        activityIdField = dialog.findViewById( R.id.activityDbId );
+
+        /*
+         * Set the values based on either now, or the existing values
+         */
+        setActivityId( activityDbId );
+        setDayField( millisTimeValue );
+        setTimeField( millisTimeValue );
+        dateField.setText( String.valueOf( millisTimeValue ) );
+        amountField.setText( amount );
+
+        /*
+         * Set the listeners for the Date and Time
+         */
+        feedDaySelect.setOnClickListener( v -> {
+            datePickerDialog = DatePickerDialog.newInstance( BabyActivity.this, initialTime );
+            datePickerDialog.setThemeDark( false );
+            datePickerDialog.showYearPickerFirst( false );
+            datePickerDialog.show( getFragmentManager(), "DatePickerDialog" );
+        } );
+
+        timeField.setOnClickListener( v -> {
+            timePickerDialog = TimePickerDialog.newInstance( BabyActivity.this, false );
+            timePickerDialog.setThemeDark( false );
+            timePickerDialog.show( getFragmentManager(), "TimePickerDialog" );
+            if ( item != null ) {
+                timePickerDialog.setInitialSelection(
+                        initialTime.get( Calendar.HOUR_OF_DAY ),
+                        initialTime.get( Calendar.MINUTE ),
+                        initialTime.get( Calendar.SECOND ) );
+            }
+        } );
     }
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *
+     * ACTIVITY POPUP SETUP
+     *
+     * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    /**
+     * Sets the Activity ID in the dialog if it is an edit
+     *
+     * @param activityDbId
+     */
+    private void setActivityId( final Integer activityDbId ) {
+        if ( activityDbId != null ) {
+            final String value = String.valueOf( activityDbId );
+            activityIdField.setText( value );
+        }
+    }
+
+
+    /**
+     * @param timeInMillis
+     * @return
+     */
+    private String setDayField( final long timeInMillis ) {
+        final String dateString;
+        final Calendar dateSet = Calendar.getInstance();
+        dateSet.setTimeInMillis( timeInMillis );
+
+        if ( isToday( dateSet ) ) {
+            dateString = "Today";
+        }
+        else {
+            dateString = getDateStringFromDate( dateSet.getTime() );
+        }
+        feedDaySelect.setText( dateString );
+        return dateString;
+    }
+
+    /**
+     * @param timeInMillis
+     * @return
+     */
+    private String setTimeField( final long timeInMillis ) {
+        final Calendar timeSet = Calendar.getInstance();
+        timeSet.setTimeInMillis( timeInMillis );
+
+        final String time = getTimeFromDate( timeSet.getTime() );
+        timeField.setText( time );
+        return time;
+    }
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *
+     * ACTIVITY POPUP REACTIONS
+     *
+     * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+    @Override
+    public void onTimeSet( final TimePickerDialog view, final int hourOfDay, final int minute,
+                           final int second ) {
+
+        // Get the date currently set in the date field
+        final long setDateInMillis = Long.parseLong( dateField.getText().toString() );
+
+        final Calendar timeSet = Calendar.getInstance();
+        timeSet.setTimeInMillis( setDateInMillis );
+        timeSet.set( Calendar.HOUR_OF_DAY, hourOfDay );
+        timeSet.set( Calendar.MINUTE, minute );
+        timeSet.set( Calendar.SECOND, second );
+
+
+        final String time = setTimeField( timeSet.getTimeInMillis() );
+
+        Toast.makeText( BabyActivity.this, time, Toast.LENGTH_LONG ).show();
+
+        dateField.setText( String.valueOf( timeSet.getTimeInMillis() ) );
+    }
+
+    /**
+     * @param view
+     * @param year
+     * @param month
+     * @param day
+     */
+    @Override
+    public void onDateSet( final DatePickerDialog view, final int year, final int month,
+                           final int day ) {
+
+        // Get the time currently set and shown in the time field
+        final Calendar time = Calendar.getInstance();
+        time.setTimeInMillis( Long.parseLong( dateField.getText().toString() ) );
+
+        // Set the provided date with the time field values
+        final Calendar dateSet = Calendar.getInstance();
+        dateSet.set(
+                year,
+                month,
+                day,
+                time.get( Calendar.HOUR_OF_DAY ),
+                time.get( Calendar.MINUTE )
+        );
+
+        final String dateString = setDayField( dateSet.getTimeInMillis() );
+
+        Toast.makeText( BabyActivity.this, dateString, Toast.LENGTH_LONG ).show();
+
+        dateField.setText( String.valueOf( dateSet.getTimeInMillis() ) );
+
+    }
+
 
     @Override
     public void onClick( final DialogInterface dialog, final int which ) {
         switch ( which ) {
             case BUTTON_NEGATIVE:
-                // int which = -2
-                dialog.dismiss();
                 break;
             case BUTTON_POSITIVE:
-                // int which = -1
-                addNewActivity();
-                dialog.dismiss();
+                final TextView idField = mDialog.findViewById( R.id.activityDbId );
+                saveActivity( idField.getText().toString() );
                 break;
         }
+        dialog.dismiss();
     }
 
-    private void addNewActivity() {
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *
+     * ACTIVITY ACTIONS
+     *
+     * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+    /**
+     * Saves or adds the activity data
+     *
+     * @param idFieldValue the ID of the field being edited (null, if new).
+     */
+    private void saveActivity( final String idFieldValue ) {
         final SQLiteDatabase db = mDatabaseHelper.getWritableDatabase();
-        final int checkedRadioButtonId = selectedActivity.getCheckedRadioButtonId();
 
         final ContentValues values = new ContentValues();
+
+        if ( idFieldValue != null && !idFieldValue.isEmpty() ) {
+            values.put( DatabaseHelper.BabyActivityEntry._ID,
+                    idFieldValue );
+        }
+
         values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY_DATE_COL,
                 dateField.getText().toString() );
         values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY_DATA_COL,
                 amountField.getText().toString() );
         values.put( DatabaseHelper.BabyActivityEntry.BABY_COL,
                 mSelectedBaby.getBabyId() );
+        values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY,
+                activityToAdd.getName() );
 
-        final RadioButton button = mDialog.findViewById( checkedRadioButtonId );
-
-        values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY, button.getText().toString() );
         db.insertWithOnConflict( DatabaseHelper.BabyActivityEntry.TABLE_NAME,
                 null,
                 values,
                 SQLiteDatabase.CONFLICT_REPLACE );
         db.close();
         updateActivityList();
+        activityAdapter.notifyDataSetChanged();
     }
 
 
     /**
-     * Gets the list of activities for the selected {@link Baby}
-     *
-     * @return List of {@link Activity} values.
+     * Gets the list of activities for the selected {@link Baby} and updates it in the Recycler View
      */
     private void updateActivityList() {
         final List<Activity> activityList = new ArrayList<>();
@@ -194,23 +403,12 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
 
         // Sort by date
         Collections.sort( activityList );
+        Collections.reverse( activityList );
+
         mActivities = activityList;
         if ( activityAdapter != null ) {
             activityAdapter.notify( mActivities );
         }
-    }
-
-    @Override
-    public boolean onContextItemSelected( final MenuItem item ) {
-        switch ( item.getTitle().toString().toLowerCase() ) {
-            case "edit":
-                return true;
-            case "delete":
-                return deleteActivity( item );
-            default:
-                return false;
-        }
-
     }
 
 
@@ -225,22 +423,130 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
                 .setTitle( "Delete Feed" )
                 .setMessage( "Are you sure you want to delete this feed entry?" )
                 .setIcon( android.R.drawable.ic_dialog_alert )
-                .setPositiveButton( android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick( final DialogInterface dialog, final int whichButton ) {
-                        final String msg;
-                        if ( mDatabaseHelper.delete( DatabaseHelper.BabyActivityEntry.TABLE_NAME,
-                                DatabaseHelper.BabyActivityEntry._ID + " = " + menuItem.getItemId() ) ) {
-                            msg = "Feed Deleted";
-                            updateActivityList();
-                        }
-                        else {
-                            msg = "Feed Could Not Be Deleted";
-                        }
-                        Toast.makeText( BabyActivity.this, msg, Toast.LENGTH_SHORT ).show();
+                .setPositiveButton( android.R.string.yes, ( dialog, whichButton ) -> {
+                    final String msg;
+                    if ( mDatabaseHelper.delete( DatabaseHelper.BabyActivityEntry.TABLE_NAME,
+                            DatabaseHelper.BabyActivityEntry._ID + " = " + menuItem.getItemId() ) ) {
+                        msg = "Feed Deleted";
+                        updateActivityList();
                     }
+                    else {
+                        msg = "Feed Could Not Be Deleted";
+                    }
+                    Toast.makeText( BabyActivity.this, msg, Toast.LENGTH_SHORT ).show();
                 } )
                 .setNegativeButton( android.R.string.no, null ).show();
         return true;
     }
 
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *
+     * CONTEXT MENU
+     *
+     * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+    /**
+     * Long press on activity
+     *
+     * @param item
+     * @return
+     */
+    @Override
+    public boolean onContextItemSelected( final MenuItem item ) {
+        switch ( item.getTitle().toString().toLowerCase() ) {
+            case "edit":
+                createAndShowActivityDialog( item );
+                return true;
+            case "delete":
+                return deleteActivity( item );
+            default:
+                return false;
+        }
+
+    }
+
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *
+     * SPEED VIEW
+     *
+     * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+    /**
+     * Listener for the SpeedView 'OnSelect' Actions
+     *
+     * @return
+     */
+    private SpeedDialView.OnActionSelectedListener speedViewOnSelect() {
+        return speedDialActionItem -> {
+            switch ( speedDialActionItem.getId() ) {
+                case R.id.fab_feed:
+                    activityToAdd = Activity.ActivityEnum.FEED;
+                    createAndShowActivityDialog( null );
+                    return false;
+                case R.id.fab_change:
+                    activityToAdd = Activity.ActivityEnum.CHANGE;
+//                        createAndShowActivityDialog( item );
+                default:
+                    return false;
+            }
+        };
+    }
+
+
+    /**
+     * Add items to the SpeedView
+     *
+     * @return e
+     */
+    private SpeedDialView addSpeedViewItems() {
+        final SpeedDialView speedDialView = findViewById( R.id.speedDial );
+
+        // Feeds
+        speedDialView.addActionItem(
+                new SpeedDialActionItem.Builder( R.id.fab_feed, R.drawable.feed )
+                        .setLabel( "Feed" )
+                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+                                R.color.sa_gray, getTheme() ) )
+                        .create() );
+        // Nappy Changes
+        speedDialView.addActionItem(
+                new SpeedDialActionItem.Builder( R.id.fab_change, R.drawable.nappy )
+                        .setLabel( "Change" )
+                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+                                R.color.sa_gray, getTheme() ) )
+                        .create() );
+        // Temperature Checks
+        speedDialView.addActionItem(
+                new SpeedDialActionItem.Builder( R.id.fab_temp, R.drawable.temperature )
+                        .setLabel( "Temperature" )
+                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+                                R.color.sa_gray, getTheme() ) )
+                        .create() );
+        // Medicine
+        speedDialView.addActionItem(
+                new SpeedDialActionItem.Builder( R.id.fab_temp, R.drawable.medicine )
+                        .setLabel( "Medicine" )
+                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+                                R.color.sa_gray, getTheme() ) )
+                        .create() );
+        // Sleep
+        speedDialView.addActionItem(
+                new SpeedDialActionItem.Builder( R.id.fab_sleep, R.drawable.sleep )
+                        .setLabel( "Sleep" )
+                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+                                R.color.sa_gray, getTheme() ) )
+                        .create() );
+        // Vomit
+        speedDialView.addActionItem(
+                new SpeedDialActionItem.Builder( R.id.fab_vomit, R.drawable.vomited )
+                        .setLabel( "Vomit" )
+                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+                                R.color.sa_gray, getTheme() ) )
+                        .create() );
+        return speedDialView;
+    }
 }

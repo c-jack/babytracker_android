@@ -25,13 +25,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         public static final String BABY_NAME_COL = "babyName";
     }
 
-    // BABY Table - column names
+    // ACTIVITY Table - column names
     public class BabyActivityEntry implements BaseColumns {
         public static final String TABLE_NAME = "baby_activity";
         public static final String BABY_COL = "baby";
         public static final String ACTIVITY = "activity";
         public static final String ACTIVITY_DATE_COL = "activityDateTime";
         public static final String ACTIVITY_DATA_COL = "activityData";
+        public static final String ACTIVITY_SEL_COL = "activitySelection";
     }
 
 
@@ -48,6 +49,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     + BabyActivityEntry.ACTIVITY + " TEXT NOT NULL, "
                     + BabyActivityEntry.ACTIVITY_DATE_COL + " TEXT NOT NULL, "
                     + BabyActivityEntry.ACTIVITY_DATA_COL + " TEXT NOT NULL, "
+                    + BabyActivityEntry.ACTIVITY_SEL_COL + " TEXT NOT NULL, "
                     + "FOREIGN KEY(" + BabyActivityEntry.BABY_COL
                     + ") REFERENCES " + BabyEntry.TABLE_NAME + " (babyid) ); ";
 
