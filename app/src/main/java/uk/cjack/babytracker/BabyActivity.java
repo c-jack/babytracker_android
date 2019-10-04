@@ -7,6 +7,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,6 +30,7 @@ import java.util.List;
 
 import uk.cjack.babytracker.adapters.ActivityAdapter;
 import uk.cjack.babytracker.db.DatabaseHelper;
+import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.model.Activity;
 import uk.cjack.babytracker.model.Baby;
 
@@ -49,9 +53,13 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     private TextView dateField;
     private TextView feedDaySelect;
     private TextView timeField;
-    private TextView amountField;
+    private TextView activityValue;
     private TextView activityIdField;
-    private Activity.ActivityEnum activityToAdd;
+    private TextView activityTitle;
+    private TextView activityValueUnit;
+    private ImageView activityIcon;
+    private RadioGroup nappyChangeTypeGroup;
+    private ActivityEnum activityToAdd;
     private AlertDialog mDialog;
     private List<Activity> mActivities;
 
@@ -111,6 +119,11 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         long millisTimeValue = now.getTime();
         final Calendar initialTime = Calendar.getInstance();
         String amount = "";
+        String activityValueUnitText = "";
+        final int title;
+        final int activityIconId;
+        int nappyChangeTypeGroupVisibility = View.INVISIBLE;
+        int activityValueVisibility = View.VISIBLE;
 
         if ( item != null ) {
             final Activity thisActivity =
@@ -122,6 +135,8 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
                 millisTimeValue = thisActivity.getActivityDateTime().getTime();
                 amount = thisActivity.getActivityValue();
                 activityDbId = thisActivity.getActivityId();
+                final ActivityEnum.ActivityConfig activityConfig = activityToAdd.config();
+                activityValueUnitText = activityConfig.getUnit();
             }
         }
         initialTime.setTimeInMillis( millisTimeValue );
@@ -130,11 +145,36 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         /*
          * Set the view based on the activity
          */
-        if ( activityToAdd.equals( Activity.ActivityEnum.FEED ) ) {
+        if ( activityToAdd.equals( ActivityEnum.FEED ) ) {
             babyActivity = R.layout.baby_feed_activity;
+            activityIconId = R.drawable.feed;
+
+            if ( activityDbId != null ) {
+                title = R.string.edit_feed_title;
+            }
+            else {
+                title = R.string.add_new_feed;
+            }
+        }
+        else if ( activityToAdd.equals( ActivityEnum.CHANGE ) )
+        {
+            babyActivity = R.layout.baby_feed_activity;
+            activityIconId = R.drawable.nappy;
+            nappyChangeTypeGroupVisibility = View.VISIBLE;
+            activityValueVisibility = View.INVISIBLE;
+
+            if ( activityDbId != null ) {
+                title = R.string.edit_change;
+            }
+            else {
+                title = R.string.add_new_change;
+            }
+
         }
         else {
             babyActivity = R.layout.baby_add_activity;
+            title = R.string.edit_feed_title;
+            activityIconId = R.drawable.nappy;
         }
 
         /*
@@ -155,8 +195,12 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         dateField = dialog.findViewById( R.id.activityDate );
         timeField = dialog.findViewById( R.id.activityTimeSelect );
         feedDaySelect = dialog.findViewById( R.id.activityDaySelect );
-        amountField = dialog.findViewById( R.id.activityValue );
+        activityValue = dialog.findViewById( R.id.activityValue );
         activityIdField = dialog.findViewById( R.id.activityDbId );
+        activityTitle = dialog.findViewById( R.id.activityTitle );
+        activityIcon = dialog.findViewById( R.id.activityIcon );
+        nappyChangeTypeGroup = dialog.findViewById( R.id.nappyChangeTypeGroup );
+        activityValueUnit = dialog.findViewById( R.id.activityValueUnit );
 
         /*
          * Set the values based on either now, or the existing values
@@ -165,7 +209,13 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         setDayField( millisTimeValue );
         setTimeField( millisTimeValue );
         dateField.setText( String.valueOf( millisTimeValue ) );
-        amountField.setText( amount );
+        activityValue.setText( amount );
+        activityTitle.setText( getString( title ) );
+        activityIcon.setImageResource( activityIconId );
+        nappyChangeTypeGroup.setVisibility( nappyChangeTypeGroupVisibility );
+        activityValue.setVisibility( activityValueVisibility );
+        activityValueUnit.setText( activityValueUnitText );
+
 
         /*
          * Set the listeners for the Date and Time
@@ -339,7 +389,9 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY_DATE_COL,
                 dateField.getText().toString() );
         values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY_DATA_COL,
-                amountField.getText().toString() );
+                activityValue.getText().toString() );
+        values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY_SEL_COL,
+                "" );
         values.put( DatabaseHelper.BabyActivityEntry.BABY_COL,
                 mSelectedBaby.getBabyId() );
         values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY,
@@ -388,8 +440,8 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
             // Get values
             final int babyId = cursor.getInt( babyIdCol );
             final String dateMillis = cursor.getString( dateMillisCol );
-            final Activity.ActivityEnum activityEnum =
-                    Activity.ActivityEnum.getEnum( cursor.getString( activityCol ) );
+            final ActivityEnum activityEnum =
+                    ActivityEnum.getEnum( cursor.getString( activityCol ) );
             final String feedAmount = cursor.getString( feedCol );
             final String feedDbId = cursor.getString( feedDbIdCol );
 
@@ -484,12 +536,12 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         return speedDialActionItem -> {
             switch ( speedDialActionItem.getId() ) {
                 case R.id.fab_feed:
-                    activityToAdd = Activity.ActivityEnum.FEED;
+                    activityToAdd = ActivityEnum.FEED;
                     createAndShowActivityDialog( null );
                     return false;
                 case R.id.fab_change:
-                    activityToAdd = Activity.ActivityEnum.CHANGE;
-//                        createAndShowActivityDialog( item );
+                    activityToAdd = ActivityEnum.CHANGE;
+                    createAndShowActivityDialog( null );
                 default:
                     return false;
             }
@@ -519,34 +571,34 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
                         .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
                                 R.color.sa_gray, getTheme() ) )
                         .create() );
-        // Temperature Checks
-        speedDialView.addActionItem(
-                new SpeedDialActionItem.Builder( R.id.fab_temp, R.drawable.temperature )
-                        .setLabel( "Temperature" )
-                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
-                                R.color.sa_gray, getTheme() ) )
-                        .create() );
-        // Medicine
-        speedDialView.addActionItem(
-                new SpeedDialActionItem.Builder( R.id.fab_temp, R.drawable.medicine )
-                        .setLabel( "Medicine" )
-                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
-                                R.color.sa_gray, getTheme() ) )
-                        .create() );
-        // Sleep
-        speedDialView.addActionItem(
-                new SpeedDialActionItem.Builder( R.id.fab_sleep, R.drawable.sleep )
-                        .setLabel( "Sleep" )
-                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
-                                R.color.sa_gray, getTheme() ) )
-                        .create() );
-        // Vomit
-        speedDialView.addActionItem(
-                new SpeedDialActionItem.Builder( R.id.fab_vomit, R.drawable.vomited )
-                        .setLabel( "Vomit" )
-                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
-                                R.color.sa_gray, getTheme() ) )
-                        .create() );
+//        // Temperature Checks
+//        speedDialView.addActionItem(
+//                new SpeedDialActionItem.Builder( R.id.fab_temp, R.drawable.temperature )
+//                        .setLabel( "Temperature" )
+//                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+//                                R.color.sa_gray, getTheme() ) )
+//                        .create() );
+//        // Medicine
+//        speedDialView.addActionItem(
+//                new SpeedDialActionItem.Builder( R.id.fab_temp, R.drawable.medicine )
+//                        .setLabel( "Medicine" )
+//                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+//                                R.color.sa_gray, getTheme() ) )
+//                        .create() );
+//        // Sleep
+//        speedDialView.addActionItem(
+//                new SpeedDialActionItem.Builder( R.id.fab_sleep, R.drawable.sleep )
+//                        .setLabel( "Sleep" )
+//                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+//                                R.color.sa_gray, getTheme() ) )
+//                        .create() );
+//        // Vomit
+//        speedDialView.addActionItem(
+//                new SpeedDialActionItem.Builder( R.id.fab_vomit, R.drawable.vomited )
+//                        .setLabel( "Vomit" )
+//                        .setFabBackgroundColor( ResourcesCompat.getColor( getResources(),
+//                                R.color.sa_gray, getTheme() ) )
+//                        .create() );
         return speedDialView;
     }
 }

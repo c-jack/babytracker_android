@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import uk.cjack.babytracker.R;
+import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.model.Activity;
 
 public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
@@ -68,7 +69,7 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         final TextView feedTimeTextView = viewHolder.activityTimeTextView;
         final ImageView activityIcon = viewHolder.activityIconTextView;
 
-        final Activity.ActivityEnum activityType = activity.getActivityType();
+        final ActivityEnum activityType = activity.getActivityType();
         if ( activityType != null ) {
             final int drawableActivityIcon;
             switch ( activityType ) {

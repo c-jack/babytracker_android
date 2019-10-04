@@ -3,6 +3,9 @@
     <string name="action_settings">Settings</string>
     <string name="baby_created_msg">Baby %s added</string>
     <string name="add_new_feed">Add a new feed</string>
+    <string name="edit_feed_title">Edit feed</string>
+    <string name="add_new_change">Add a new change</string>
+    <string name="edit_change">Edit change</string>
     <string name="new_feed_when">When</string>
     <string name="new_feed_qty">How much</string>
     <string name="new_feed_unit">ml</string>
