@@ -4,7 +4,7 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import uk.cjack.babytracker.db.DatabaseHelper;
+import uk.cjack.babytracker.database.db.DatabaseHelper;
 
 public class BaseActivity extends AppCompatActivity {
 

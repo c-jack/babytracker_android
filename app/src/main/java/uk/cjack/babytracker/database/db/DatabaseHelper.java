@@ -1,4 +1,4 @@
-package uk.cjack.babytracker.db;
+package uk.cjack.babytracker.database.db;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

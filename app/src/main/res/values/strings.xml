@@ -1,8 +1,15 @@
 <resources>
     <string name="app_name">Baby Tracker</string>
+    <string name="cancel_button_text">Cancel</string>
+    <string name="save_button_text">Save</string>
+    <string name="add_button_text">Add</string>
     <string name="action_settings">Settings</string>
+    <string name="baby_edit_msg">Edit %s</string>
     <string name="baby_created_msg">Baby %s added</string>
+    <string name="baby_saved_msg">Baby %s saved</string>
     <string name="add_new_feed">Add a new feed</string>
+    <string name="add_new_baby">Add a new baby</string>
+    <string name="delete_baby">Delete baby</string>
     <string name="edit_feed_title">Edit feed</string>
     <string name="add_new_change">Add a new change</string>
     <string name="edit_change">Edit change</string>

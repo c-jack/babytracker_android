@@ -1,65 +1,69 @@
 package uk.cjack.babytracker;
 
 import android.app.AlertDialog;
-import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
-
-import uk.cjack.babytracker.adapters.BabyAdapter;
-import uk.cjack.babytracker.db.DatabaseHelper;
-import uk.cjack.babytracker.model.Baby;
+import uk.cjack.babytracker.adapters.BabyListAdapter;
+import uk.cjack.babytracker.database.entities.Baby;
+import uk.cjack.babytracker.view.BabyViewModel;
 
 
-public class MainActivity extends BaseActivity {
+public class MainActivity extends BaseActivity implements BabyListAdapter.OnItemClicked {
 
-    private BabyAdapter mBabyNameAdapter;
-    private ListView mBabyNameView;
-    private ArrayList<Baby> mBabyNameList;
+    private BabyListAdapter mBabyListAdapter;
+    private RecyclerView mBabyNameView;
+    private BabyViewModel mBabyViewModel;
 
     @Override
     protected void onCreate( final Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
-
-        // Set initial page on load
         setContentView( R.layout.activity_main );
 
         // Set toolbar
         final Toolbar toolbar = findViewById( R.id.toolbar );
         setSupportActionBar( toolbar );
 
-        // Get ListView
+
+        mBabyListAdapter = new BabyListAdapter();
+        mBabyListAdapter.setOnClick( MainActivity.this );
+
+
+        mBabyViewModel = ViewModelProviders.of( this ).get( BabyViewModel.class );
+        mBabyViewModel.getAllBabies().observe( this,
+                babyList -> mBabyListAdapter.setBabyList( babyList ) );
+
         mBabyNameView = findViewById( R.id.baby_name_list_view );
-        mBabyNameView.setDivider( null );
-        mBabyNameView.setOnItemClickListener( ( parent, view, position, id ) -> {
-            selectBaby(mBabyNameList.get( position ) );
-        } );
+        mBabyNameView.setLayoutManager( new LinearLayoutManager( this ) );
+        mBabyNameView.setAdapter( mBabyListAdapter );
 
 
         // Set floating button
         final FloatingActionButton fab = findViewById( R.id.fab );
-        fab.setOnClickListener( view -> addNewBaby() );
+        fab.setOnClickListener( view -> createNewBabyDialog() );
 
-        updateBabyNameListView();
 
         registerForContextMenu( mBabyNameView );
 
+    }
+
+    @Override
+    public void onItemClick( final int position, final Baby current ) {
+        final Intent intent = new Intent( MainActivity.this, BabyActivity.class );
+        intent.putExtra( BabyActivity.SELECTED_BABY, current );
+        startActivity( intent );
     }
 
     /**
@@ -71,22 +75,6 @@ public class MainActivity extends BaseActivity {
         Toast.makeText( MainActivity.this, msg, Toast.LENGTH_SHORT ).show();
     }
 
-    @Override
-    public void onCreateContextMenu( final ContextMenu menu, final View v,
-                                     final ContextMenu.ContextMenuInfo menuInfo ) {
-        if ( v.getId() == R.id.baby_name_list_view ) {
-            final ListView lv = ( ListView ) v;
-            final AdapterView.AdapterContextMenuInfo adapterContextMenuInfo =
-                    ( AdapterView.AdapterContextMenuInfo ) menuInfo;
-            final String babyName = mBabyNameList.get( adapterContextMenuInfo.position ).getBabyName();
-
-            menu.setHeaderIcon( R.drawable.baby );
-            menu.setHeaderTitle( babyName );
-            final int id = Math.toIntExact( adapterContextMenuInfo.id );
-            menu.add( 0, id, 0, "Edit" );
-            menu.add( 0, id, 0, "Delete" );
-        }
-    }
 
     /**
      * Long press on activity
@@ -98,7 +86,7 @@ public class MainActivity extends BaseActivity {
     public boolean onContextItemSelected( final MenuItem item ) {
         switch ( item.getTitle().toString().toLowerCase() ) {
             case "edit":
-                editBaby( item );
+                createEditBabyDialog( item );
                 return true;
             case "delete":
                 return deleteBaby( item );
@@ -116,24 +104,19 @@ public class MainActivity extends BaseActivity {
      */
     private boolean deleteBaby( final MenuItem menuItem ) {
         new AlertDialog.Builder( this )
-                .setTitle( "Delete Baby" )
+                .setTitle( getString( R.string.delete_baby ) )
                 .setMessage( "Are you sure you want to delete this baby?" )
                 .setIcon( android.R.drawable.ic_dialog_alert )
                 .setPositiveButton( android.R.string.yes, ( dialog, whichButton ) -> {
-                    final String msg;
-                    final long babyId = mBabyNameList.get( menuItem.getItemId() ).getBabyId();
+                    final Baby selectedBaby =
+                            mBabyListAdapter.getBabyList().stream().filter(
+                                    activity -> ( menuItem.getItemId() == activity.getBabyId() ) )
+                                    .findAny().orElse( null );
 
-                    if ( mDatabaseHelper.delete( DatabaseHelper.BabyEntry.TABLE_NAME,
-                            DatabaseHelper.BabyEntry._ID + " = " + babyId ) ) {
-                        msg = "Baby Deleted";
+                    mBabyViewModel.delete( selectedBaby );
 
-                    }
-                    else {
-                        msg = "Baby Could Not Be Deleted";
-                    }
-                    Toast.makeText( MainActivity.this, msg, Toast.LENGTH_SHORT ).show();
+                    Toast.makeText( MainActivity.this, "Deleted", Toast.LENGTH_SHORT ).show();
 
-                    updateBabyNameListView();
                 } )
                 .setNegativeButton( android.R.string.no, null ).show();
         return true;
@@ -159,141 +142,104 @@ public class MainActivity extends BaseActivity {
 
 
     /**
-     * Load the selected baby
+     * Creates and displays the edit dialog for the selected baby
+     *
+     * @param menuItem the item being edited
      */
-    public void selectBaby( final Baby selectedBaby ) {
-        final Intent intent = new Intent( MainActivity.this, BabyActivity.class );
-        intent.putExtra( BabyActivity.SELECTED_BABY, selectedBaby );
-        startActivity( intent );
-    }
+    private void createEditBabyDialog( final MenuItem menuItem ) {
 
-    private void editBaby( final MenuItem item ) {
+        final Baby editedBaby =
+                mBabyListAdapter.getBabyList().stream().filter( activity -> ( menuItem.getItemId() == activity.getBabyId() ) ).findAny().orElse( null );
 
-        final AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        final Baby editedBaby = mBabyNameList.get( menuInfo.position);
         final EditText babyNameEditText = new EditText( this );
-        babyNameEditText.setText( editedBaby.getBabyName() );
 
-        final AlertDialog dialog = new AlertDialog.Builder( this )
-                .setTitle( "Edit " + item.getTitle() )
-                .setView( babyNameEditText )
-                .setPositiveButton( "Save", ( dialog1, which ) -> {
-                    final String babyName = String.valueOf( babyNameEditText.getText() );
-                    final SQLiteDatabase db = mDatabaseHelper.getWritableDatabase();
-                    final ContentValues values = new ContentValues();
+        if ( editedBaby != null ) {
 
-                    values.put( DatabaseHelper.BabyEntry._ID, editedBaby.getBabyId() );
-                    values.put( DatabaseHelper.BabyEntry.BABY_NAME_COL, babyName );
-                    db.insertWithOnConflict( DatabaseHelper.BabyEntry.TABLE_NAME,
-                            null,
-                            values,
-                            SQLiteDatabase.CONFLICT_REPLACE );
-                    db.close();
-                    updateBabyNameListView();
+            babyNameEditText.setText( editedBaby.getBabyName() );
 
-                    final String msg = String.format( getString( R.string.baby_created_msg ),
-                            babyName );
-                    makeToast( msg );
-                } )
-                .setNegativeButton( "Cancel", null )
-                .create();
-        dialog.show();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected( final MenuItem item ) {
-        switch ( item.getItemId() ) {
-//            case R.id.action_add_task:
-//                final EditText taskEditText = new EditText(this);
-//                AlertDialog dialog = new AlertDialog.Builder(this)
-//                        .setTitle("Add a new task")
-//                        .setMessage("What do you want to do next?")
-//                        .setView(taskEditText)
-//                        .setPositiveButton("Add", new DialogInterface.OnClickListener() {
-//                            @Override
-//                            public void onClick(DialogInterface dialog, int which) {
-//                                String task = String.valueOf(taskEditText.getText());
-//                                SQLiteDatabase db = mHelper.getWritableDatabase();
-//                                ContentValues values = new ContentValues();
-//                                values.put(TaskContract.TaskEntry.COL_TASK_TITLE, task);
-//                                db.insertWithOnConflict(TaskContract.TaskEntry.TABLE,
-//                                        null,
-//                                        values,
-//                                        SQLiteDatabase.CONFLICT_REPLACE);
-//                                db.close();
-//                                updateUI();
-//                            }
-//                        })
-//                        .setNegativeButton("Cancel", null)
-//                        .create();
-//                dialog.show();
-//                return true;
-
-            default:
-                return super.onOptionsItemSelected( item );
+            final AlertDialog dialog = new AlertDialog.Builder( this )
+                    .setTitle( String.format( getString( R.string.baby_edit_msg ),
+                            menuItem.getTitle() ) )
+                    .setView( babyNameEditText )
+                    .setPositiveButton( getString( R.string.save_button_text ),
+                            saveBaby( editedBaby, babyNameEditText ) )
+                    .setNegativeButton( getString( R.string.cancel_button_text ), null )
+                    .create();
+            dialog.show();
         }
     }
-
 
     /**
-     * Refreshes the ListView of babynames
+     * Processes the onClick event in the edit baby popup, and saves the amended {@link Baby} to
+     * the database
+     *
+     * @param editedBaby       the {@link Baby} for the current selection
+     * @param babyNameEditText the {@link android.widget.TextView} for the edited baby name
+     * @return onClick listener to be passed back up
      */
-    private void updateBabyNameListView() {
-        final ArrayList<Baby> babyList = new ArrayList<>();
+    private DialogInterface.OnClickListener saveBaby( final Baby editedBaby,
+                                                      final EditText babyNameEditText ) {
+        return ( dialog1, which ) -> {
+            final String babyName = String.valueOf( babyNameEditText.getText() );
 
-        final SQLiteDatabase db = mDatabaseHelper.getReadableDatabase();
+            editedBaby.setBabyName( babyName );
+            mBabyViewModel.update( editedBaby );
 
-        final Cursor cursor = db.query( DatabaseHelper.BabyEntry.TABLE_NAME,
-                new String[]{ DatabaseHelper.BabyEntry._ID,
-                        DatabaseHelper.BabyEntry.BABY_NAME_COL },
-                null, null, null, null, null );
-        while ( cursor.moveToNext() ) {
-            final int babyNameCol = cursor.getColumnIndex( DatabaseHelper.BabyEntry.BABY_NAME_COL );
-            final int babyIdCol = cursor.getColumnIndex( DatabaseHelper.BabyEntry._ID );
-            babyList.add( new Baby( cursor.getLong( babyIdCol ),cursor.getString( babyNameCol ) ));
-        }
-
-        if ( mBabyNameAdapter == null ) {
-            mBabyNameAdapter = new BabyAdapter( this, R.id.baby_name_list_view, babyList ); // where to get all the data
-
-            mBabyNameView.setAdapter( mBabyNameAdapter ); // set it as the adapter of the
-            // ListView instance
-        }
-        else {
-            mBabyNameAdapter.notify( babyList );
-        }
-        mBabyNameList = babyList;
-        cursor.close();
-        db.close();
+            final String msg = String.format( getString( R.string.baby_created_msg ),
+                    babyName );
+            makeToast( msg );
+        };
     }
+
+
+//    @Override
+//    public void onCreateContextMenu( final ContextMenu menu, final View v,
+//                                     final ContextMenu.ContextMenuInfo menuInfo ) {
+//        if ( v.getId() == R.id.baby_name_list_view ) {
+//            final AdapterView.AdapterContextMenuInfo adapterContextMenuInfo =
+//                    ( AdapterView.AdapterContextMenuInfo ) menuInfo;
+////            final String babyName =
+////                    mBabyNameList.get( adapterContextMenuInfo.position ).getBabyName();
+//
+//            menu.setHeaderIcon( R.drawable.baby );
+////            menu.setHeaderTitle( babyName );
+//            final int id = Math.toIntExact( adapterContextMenuInfo.id );
+//            menu.add( 0, id, 0, "Edit" );
+//            menu.add( 0, id, 0, "Delete" );
+//        }
+//    }
 
     /**
      * Add new baby
      */
-    private void addNewBaby() {
+    private void createNewBabyDialog() {
         final EditText taskEditText = new EditText( this );
         final AlertDialog dialog = new AlertDialog.Builder( this )
-                .setTitle( "Add a new Baby" )
+                .setTitle( getString( R.string.add_new_baby ) )
                 .setView( taskEditText )
-                .setPositiveButton( "Add", ( dialog1, which ) -> {
-                    final String task = String.valueOf( taskEditText.getText() );
-                    final SQLiteDatabase db = mDatabaseHelper.getWritableDatabase();
-                    final ContentValues values = new ContentValues();
-
-                    values.put( DatabaseHelper.BabyEntry.BABY_NAME_COL, task );
-                    db.insertWithOnConflict( DatabaseHelper.BabyEntry.TABLE_NAME,
-                            null,
-                            values,
-                            SQLiteDatabase.CONFLICT_REPLACE );
-                    db.close();
-                    updateBabyNameListView();
-
-                    final String msg = String.format( getString( R.string.baby_created_msg ),
-                            task );
-                    makeToast( msg );
-                } )
-                .setNegativeButton( "Cancel", null )
+                .setPositiveButton( getString( R.string.add_button_text ),
+                        addNewBabyToDatabase( taskEditText ) )
+                .setNegativeButton( getString( R.string.cancel_button_text ), null )
                 .create();
         dialog.show();
+    }
+
+    /**
+     * Add a new Baby to the Database
+     *
+     * @param taskEditText
+     * @return
+     */
+    private DialogInterface.OnClickListener addNewBabyToDatabase( final EditText taskEditText ) {
+        return ( dialog1, which ) -> {
+            final String babyName = String.valueOf( taskEditText.getText() );
+            final Baby newBaby = new Baby( babyName );
+
+            mBabyViewModel.insert( newBaby );
+
+            final String msg = String.format( getString( R.string.baby_created_msg ),
+                    babyName );
+            makeToast( msg );
+        };
     }
 }

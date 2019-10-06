@@ -19,12 +19,10 @@ import uk.cjack.babytracker.model.Activity;
 
 public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
 
-    private Context context;
     private List<Activity> mActivityList;
     private String mActivityDate;
 
-    public ActivityAdapter( final Context context, final List<Activity> feedList ) {
-        this.context = context;
+    public ActivityAdapter( final List<Activity> feedList ) {
         this.mActivityList = feedList;
     }
 

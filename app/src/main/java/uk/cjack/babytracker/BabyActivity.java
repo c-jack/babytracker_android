@@ -29,10 +29,10 @@ import java.util.Date;
 import java.util.List;
 
 import uk.cjack.babytracker.adapters.ActivityAdapter;
-import uk.cjack.babytracker.db.DatabaseHelper;
+import uk.cjack.babytracker.database.db.DatabaseHelper;
 import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.model.Activity;
-import uk.cjack.babytracker.model.Baby;
+import uk.cjack.babytracker.database.entities.Baby;
 
 import static android.content.DialogInterface.BUTTON_NEGATIVE;
 import static android.content.DialogInterface.BUTTON_POSITIVE;
@@ -87,7 +87,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         // Initialize contacts
         updateActivityList();
 
-        activityAdapter = new ActivityAdapter( this, mActivities );
+        activityAdapter = new ActivityAdapter( mActivities );
         mActivityListView.setAdapter( activityAdapter );
         mActivityListView.setLayoutManager( new LinearLayoutManager( this ) );
 
