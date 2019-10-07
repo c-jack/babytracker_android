@@ -17,4 +17,7 @@
     <string name="new_feed_qty">How much</string>
     <string name="new_feed_unit">ml</string>
     <string name="new_feed_hint">xx</string>
+    <string name="wet_nappy">wet</string>
+    <string name="soiled_nappy">soiled</string>
+    <string name="today">today</string>
 </resources>

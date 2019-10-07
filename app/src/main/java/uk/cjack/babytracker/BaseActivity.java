@@ -19,10 +19,6 @@ public class BaseActivity extends AppCompatActivity {
     protected void onCreate( final Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
 
-
-        // Initialise DB helper
-        mDatabaseHelper = new DatabaseHelper(this);
-
     }
 
     @Override

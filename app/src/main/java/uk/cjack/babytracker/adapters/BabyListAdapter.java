@@ -5,7 +5,6 @@ import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -48,10 +47,6 @@ public class BabyListAdapter extends RecyclerView.Adapter<BabyListAdapter.BabyVi
                     current )
             );
         }
-        else {
-            // Covers the case of data not being ready yet.
-            holder.babyNameItemView.setText( "No Word" );
-        }
     }
 
     public void setBabyList( final List<Baby> babyList ) {
@@ -91,18 +86,14 @@ public class BabyListAdapter extends RecyclerView.Adapter<BabyListAdapter.BabyVi
         @Override
         public void onCreateContextMenu( final ContextMenu menu, final View v,
                                          final ContextMenu.ContextMenuInfo menuInfo ) {
-//            if ( v.getId() == R.id.baby_name_list_view || v.getId() == R.id.babyName ) {
-                final AdapterView.AdapterContextMenuInfo adapterContextMenuInfo =
-                        ( AdapterView.AdapterContextMenuInfo ) menuInfo;
-                final String babyName =
-                        mBabyList.get( getLayoutPosition() ).getBabyName();
+            final String babyName =
+                    mBabyList.get( getLayoutPosition() ).getBabyName();
 
-                menu.setHeaderIcon( R.drawable.baby );
-                menu.setHeaderTitle( babyName );
-                final int id = mBabyList.get( getLayoutPosition() ).getBabyId();
-                menu.add( 0, id, 0, "Edit" );
-                menu.add( 0, id, 0, "Delete" );
-//            }
+            menu.setHeaderIcon( R.drawable.baby );
+            menu.setHeaderTitle( babyName );
+            final int id = mBabyList.get( getLayoutPosition() ).getBabyId();
+            menu.add( 0, id, 0, "Edit" );
+            menu.add( 0, id, 0, "Delete" );
         }
     }
 

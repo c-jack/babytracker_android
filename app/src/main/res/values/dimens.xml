@@ -1,6 +1,4 @@
 <resources>
-    <dimen name="fab_margin">16dp</dimen>
-    <dimen name="activity_horizontal_margin">16dp</dimen>
-    <dimen name="activity_vertical_margin">16dp</dimen>
-    <dimen name="sd_label_max_width">200dp</dimen>
+    <dimen name="activity_height">36dp</dimen>
+    <dimen name="activity_height_with_date">75dp</dimen>
 </resources>

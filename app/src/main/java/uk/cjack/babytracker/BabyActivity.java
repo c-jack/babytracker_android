@@ -1,19 +1,18 @@
 package uk.cjack.babytracker;
 
 import android.app.AlertDialog;
-import android.content.ContentValues;
 import android.content.DialogInterface;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.content.res.ResourcesCompat;
+import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -22,22 +21,25 @@ import com.leinardi.android.speeddial.SpeedDialView;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 
-import java.util.ArrayList;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
+import java.util.TimeZone;
 
 import uk.cjack.babytracker.adapters.ActivityAdapter;
-import uk.cjack.babytracker.database.db.DatabaseHelper;
-import uk.cjack.babytracker.enums.ActivityEnum;
-import uk.cjack.babytracker.model.Activity;
+import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.database.entities.Baby;
+import uk.cjack.babytracker.enums.ActivityEnum;
+import uk.cjack.babytracker.enums.ChangeTypeEnum;
+import uk.cjack.babytracker.model.ActivityViewModelFactory;
+import uk.cjack.babytracker.view.ActivityViewModel;
 
 import static android.content.DialogInterface.BUTTON_NEGATIVE;
 import static android.content.DialogInterface.BUTTON_POSITIVE;
-import static uk.cjack.babytracker.model.Activity.getDateStringFromDate;
-import static uk.cjack.babytracker.model.Activity.getTimeFromDate;
+import static uk.cjack.babytracker.database.entities.Activity.getDateStringFromDate;
+import static uk.cjack.babytracker.database.entities.Activity.getTimeFromDate;
 import static uk.cjack.babytracker.utils.BabyTrackerUtils.isToday;
 
 public class BabyActivity extends BaseActivity implements AlertDialog.OnClickListener,
@@ -48,20 +50,20 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     public static final String TITLE = "%s's Activity";
 
     private RecyclerView mActivityListView;
-    private ActivityAdapter activityAdapter;
+    private ActivityAdapter mActivityAdapter;
     private Baby mSelectedBaby;
     private TextView dateField;
     private TextView feedDaySelect;
     private TextView timeField;
-    private TextView activityValue;
+    private TextView activityValueField;
     private TextView activityIdField;
-    private TextView activityTitle;
-    private TextView activityValueUnit;
+    private TextView activityTitleField;
+    private TextView activityValueUnitField;
     private ImageView activityIcon;
     private RadioGroup nappyChangeTypeGroup;
     private ActivityEnum activityToAdd;
     private AlertDialog mDialog;
-    private List<Activity> mActivities;
+    private ActivityViewModel mActivityViewModel;
 
     private DatePickerDialog datePickerDialog;
     private TimePickerDialog timePickerDialog;
@@ -70,25 +72,26 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     @Override
     protected void onCreate( final Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
-
-        // Set initial page on load
         setContentView( R.layout.baby_screen );
 
+        // Get ListView
+        mActivityListView = findViewById( R.id.feedListView );
+
         final TextView selectedBabyNameText = findViewById( R.id.selectedBabyName );
+
         final Baby selectedBaby = ( Baby ) getIntent().getSerializableExtra( SELECTED_BABY );
         if ( selectedBaby != null ) {
             mSelectedBaby = selectedBaby;
             selectedBabyNameText.setText( String.format( TITLE, mSelectedBaby.getBabyName() ) );
         }
 
-        // Get ListView
-        mActivityListView = findViewById( R.id.feedListView );
+        mActivityViewModel = ViewModelProviders.of( this,
+                new ActivityViewModelFactory( this.getApplication(), selectedBaby ) ).get( ActivityViewModel.class );
+        mActivityViewModel.getAllActivitiesForBaby().observe( this,
+                activityList -> mActivityAdapter.setActivityList( activityList ) );
 
-        // Initialize contacts
-        updateActivityList();
-
-        activityAdapter = new ActivityAdapter( mActivities );
-        mActivityListView.setAdapter( activityAdapter );
+        mActivityAdapter = new ActivityAdapter( this );
+        mActivityListView.setAdapter( mActivityAdapter );
         mActivityListView.setLayoutManager( new LinearLayoutManager( this ) );
 
         // Add SpeedView items
@@ -107,7 +110,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     /**
      * Creates and shows the new activity dialog
      *
-     * @param item
+     * @param item menuItem
      */
     private void createAndShowActivityDialog( final MenuItem item ) {
 
@@ -118,126 +121,137 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         String addOrSaveButtonText = "Add";
         long millisTimeValue = now.getTime();
         final Calendar initialTime = Calendar.getInstance();
-        String amount = "";
-        String activityValueUnitText = "";
+        final String activityValueUnitText;
         final int title;
         final int activityIconId;
         int nappyChangeTypeGroupVisibility = View.INVISIBLE;
         int activityValueVisibility = View.VISIBLE;
+        String activityValue = null;
+        ChangeTypeEnum changeTypeEnum = null;
 
         if ( item != null ) {
             final Activity thisActivity =
-                    mActivities.stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
+                    mActivityAdapter.getActivityList().stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
 
             if ( thisActivity != null ) {
-                activityToAdd = thisActivity.getActivityType();
-                addOrSaveButtonText = "Save";
+                activityToAdd = ActivityEnum.getEnum( thisActivity.getActivityTypeValue() );
+                addOrSaveButtonText = getString( R.string.save_button_text );
                 millisTimeValue = thisActivity.getActivityDateTime().getTime();
-                amount = thisActivity.getActivityValue();
+                activityValue = thisActivity.getActivityValue();
                 activityDbId = thisActivity.getActivityId();
-                final ActivityEnum.ActivityConfig activityConfig = activityToAdd.config();
-                activityValueUnitText = activityConfig.getUnit();
             }
         }
         initialTime.setTimeInMillis( millisTimeValue );
 
+        if ( activityToAdd != null ) {
+            /*
+             * Add the Unit value to the text field
+             */
+            final ActivityEnum.ActivityConfig activityConfig = activityToAdd.config();
+            activityValueUnitText = activityConfig.getUnit();
 
-        /*
-         * Set the view based on the activity
-         */
-        if ( activityToAdd.equals( ActivityEnum.FEED ) ) {
-            babyActivity = R.layout.baby_feed_activity;
-            activityIconId = R.drawable.feed;
+            /*
+             * Set the view based on the activity
+             */
+            if ( activityToAdd.equals( ActivityEnum.FEED ) ) {
+                babyActivity = R.layout.add_activity;
+                activityIconId = R.drawable.feed;
 
-            if ( activityDbId != null ) {
+                if ( activityDbId != null ) {
+                    title = R.string.edit_feed_title;
+                }
+                else {
+                    title = R.string.add_new_feed;
+                }
+            }
+            else if ( activityToAdd.equals( ActivityEnum.CHANGE ) ) {
+
+                babyActivity = R.layout.add_activity;
+                activityIconId = R.drawable.nappy;
+                nappyChangeTypeGroupVisibility = View.VISIBLE;
+                activityValueVisibility = View.INVISIBLE;
+
+                if ( activityDbId != null ) {
+                    title = R.string.edit_change;
+                    changeTypeEnum = ChangeTypeEnum.getEnum( activityValue );
+                }
+                else {
+                    title = R.string.add_new_change;
+                }
+            }
+            else {
+                babyActivity = R.layout.add_activity;
                 title = R.string.edit_feed_title;
+                activityIconId = R.drawable.nappy;
             }
-            else {
-                title = R.string.add_new_feed;
+
+            /*
+             * Build the dialog
+             */
+            final AlertDialog dialog = new AlertDialog.Builder( this )
+                    .setView( babyActivity )
+                    .setPositiveButton( addOrSaveButtonText, this )
+                    .setNegativeButton( getString( R.string.cancel_button_text), null )
+                    .create();
+            dialog.show();
+
+            mDialog = dialog;
+
+            /*
+             * Set the fields in the pop-up dialog
+             */
+            dateField = dialog.findViewById( R.id.activityDate );
+            timeField = dialog.findViewById( R.id.activityTimeSelect );
+            feedDaySelect = dialog.findViewById( R.id.activityDaySelect );
+            activityValueField = dialog.findViewById( R.id.activityValue );
+            activityIdField = dialog.findViewById( R.id.activityDbId );
+            activityTitleField = dialog.findViewById( R.id.activityTitle );
+            activityIcon = dialog.findViewById( R.id.activityIcon );
+            nappyChangeTypeGroup = dialog.findViewById( R.id.nappyChangeTypeGroup );
+            activityValueUnitField = dialog.findViewById( R.id.activityValueUnit );
+
+            /*
+             * Set the values based on either now, or the existing values
+             */
+            setActivityId( activityDbId );
+            setDayField( millisTimeValue );
+            setTimeField( millisTimeValue );
+            dateField.setText( String.valueOf( millisTimeValue ) );
+            activityValueField.setText( activityValue );
+            activityTitleField.setText( getString( title ) );
+            activityIcon.setImageResource( activityIconId );
+            nappyChangeTypeGroup.setVisibility( nappyChangeTypeGroupVisibility );
+            activityValueField.setVisibility( activityValueVisibility );
+            activityValueUnitField.setText( activityValueUnitText );
+            if ( changeTypeEnum != null ) {
+                nappyChangeTypeGroup.clearCheck();
+                final ChangeTypeEnum.ChangeConfig config = changeTypeEnum.getConfig();
+                final RadioButton selectedRadioButton = dialog.findViewById( config.getRadioButtonId() );
+                selectedRadioButton.setChecked( true );
             }
+
+            /*
+             * Set the listeners for the Date and Time
+             */
+            feedDaySelect.setOnClickListener( v -> {
+                datePickerDialog = DatePickerDialog.newInstance( BabyActivity.this, initialTime );
+                datePickerDialog.setThemeDark( false );
+                datePickerDialog.showYearPickerFirst( false );
+                datePickerDialog.show( getFragmentManager(), "DatePickerDialog" );
+            } );
+
+            timeField.setOnClickListener( v -> {
+                timePickerDialog = TimePickerDialog.newInstance( BabyActivity.this, false );
+                timePickerDialog.setThemeDark( false );
+                timePickerDialog.show( getFragmentManager(), "TimePickerDialog" );
+                if ( item != null ) {
+                    timePickerDialog.setInitialSelection(
+                            initialTime.get( Calendar.HOUR_OF_DAY ),
+                            initialTime.get( Calendar.MINUTE ),
+                            initialTime.get( Calendar.SECOND ) );
+                }
+            } );
         }
-        else if ( activityToAdd.equals( ActivityEnum.CHANGE ) )
-        {
-            babyActivity = R.layout.baby_feed_activity;
-            activityIconId = R.drawable.nappy;
-            nappyChangeTypeGroupVisibility = View.VISIBLE;
-            activityValueVisibility = View.INVISIBLE;
-
-            if ( activityDbId != null ) {
-                title = R.string.edit_change;
-            }
-            else {
-                title = R.string.add_new_change;
-            }
-
-        }
-        else {
-            babyActivity = R.layout.baby_add_activity;
-            title = R.string.edit_feed_title;
-            activityIconId = R.drawable.nappy;
-        }
-
-        /*
-         * Build the dialog
-         */
-        final AlertDialog dialog = new AlertDialog.Builder( this )
-                .setView( babyActivity )
-                .setPositiveButton( addOrSaveButtonText, this )
-                .setNegativeButton( "Cancel", null )
-                .create();
-        dialog.show();
-
-        mDialog = dialog;
-
-        /*
-         * Set the fields in the pop-up dialog
-         */
-        dateField = dialog.findViewById( R.id.activityDate );
-        timeField = dialog.findViewById( R.id.activityTimeSelect );
-        feedDaySelect = dialog.findViewById( R.id.activityDaySelect );
-        activityValue = dialog.findViewById( R.id.activityValue );
-        activityIdField = dialog.findViewById( R.id.activityDbId );
-        activityTitle = dialog.findViewById( R.id.activityTitle );
-        activityIcon = dialog.findViewById( R.id.activityIcon );
-        nappyChangeTypeGroup = dialog.findViewById( R.id.nappyChangeTypeGroup );
-        activityValueUnit = dialog.findViewById( R.id.activityValueUnit );
-
-        /*
-         * Set the values based on either now, or the existing values
-         */
-        setActivityId( activityDbId );
-        setDayField( millisTimeValue );
-        setTimeField( millisTimeValue );
-        dateField.setText( String.valueOf( millisTimeValue ) );
-        activityValue.setText( amount );
-        activityTitle.setText( getString( title ) );
-        activityIcon.setImageResource( activityIconId );
-        nappyChangeTypeGroup.setVisibility( nappyChangeTypeGroupVisibility );
-        activityValue.setVisibility( activityValueVisibility );
-        activityValueUnit.setText( activityValueUnitText );
-
-
-        /*
-         * Set the listeners for the Date and Time
-         */
-        feedDaySelect.setOnClickListener( v -> {
-            datePickerDialog = DatePickerDialog.newInstance( BabyActivity.this, initialTime );
-            datePickerDialog.setThemeDark( false );
-            datePickerDialog.showYearPickerFirst( false );
-            datePickerDialog.show( getFragmentManager(), "DatePickerDialog" );
-        } );
-
-        timeField.setOnClickListener( v -> {
-            timePickerDialog = TimePickerDialog.newInstance( BabyActivity.this, false );
-            timePickerDialog.setThemeDark( false );
-            timePickerDialog.show( getFragmentManager(), "TimePickerDialog" );
-            if ( item != null ) {
-                timePickerDialog.setInitialSelection(
-                        initialTime.get( Calendar.HOUR_OF_DAY ),
-                        initialTime.get( Calendar.MINUTE ),
-                        initialTime.get( Calendar.SECOND ) );
-            }
-        } );
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -269,7 +283,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         dateSet.setTimeInMillis( timeInMillis );
 
         if ( isToday( dateSet ) ) {
-            dateString = "Today";
+            dateString = getString( R.string.today );
         }
         else {
             dateString = getDateStringFromDate( dateSet.getTime() );
@@ -359,7 +373,13 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
                 break;
             case BUTTON_POSITIVE:
                 final TextView idField = mDialog.findViewById( R.id.activityDbId );
-                saveActivity( idField.getText().toString() );
+                final String idText = idField.getText().toString();
+                if ( idText.length() > 0 ) {
+                    saveActivity( Long.parseLong( idText ) );
+                }
+                else {
+                    saveActivity( 0 );
+                }
                 break;
         }
         dialog.dismiss();
@@ -374,92 +394,67 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     /**
      * Saves or adds the activity data
      *
-     * @param idFieldValue the ID of the field being edited (null, if new).
+     * @param activityId the ID of the activity being edited (null, if new).
      */
-    private void saveActivity( final String idFieldValue ) {
-        final SQLiteDatabase db = mDatabaseHelper.getWritableDatabase();
+    private void saveActivity( final long activityId ) {
 
-        final ContentValues values = new ContentValues();
+        final Activity editedActivity =
+                mActivityAdapter.getActivityList().stream().filter(
+                        activity -> ( activityId == activity.getActivityId() ) )
+                        .findAny().orElse( null );
 
-        if ( idFieldValue != null && !idFieldValue.isEmpty() ) {
-            values.put( DatabaseHelper.BabyActivityEntry._ID,
-                    idFieldValue );
+        final String activityDate = dateField.getText().toString();
+        final LocalDateTime localDateTime =
+                LocalDateTime.ofInstant( Instant.ofEpochMilli( Long.parseLong( activityDate ) ),
+                        TimeZone.getDefault().toZoneId() );
+        final Date activityDateTime =
+                Date.from( localDateTime.atZone( ZoneId.systemDefault() ).toInstant() );
+
+        final int selectedNappyChangeType = nappyChangeTypeGroup.getCheckedRadioButtonId();
+        final RadioButton selectedType = mDialog.findViewById( selectedNappyChangeType );
+
+        final String activityValue;
+
+        if ( activityToAdd == ActivityEnum.CHANGE ) {
+            activityValue = selectedType.getTag().toString();
+        }
+        else {
+            activityValue = activityValueField.getText().toString();
+
         }
 
-        values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY_DATE_COL,
-                dateField.getText().toString() );
-        values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY_DATA_COL,
-                activityValue.getText().toString() );
-        values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY_SEL_COL,
-                "" );
-        values.put( DatabaseHelper.BabyActivityEntry.BABY_COL,
-                mSelectedBaby.getBabyId() );
-        values.put( DatabaseHelper.BabyActivityEntry.ACTIVITY,
-                activityToAdd.getName() );
+        if ( editedActivity != null ) {
 
-        db.insertWithOnConflict( DatabaseHelper.BabyActivityEntry.TABLE_NAME,
-                null,
-                values,
-                SQLiteDatabase.CONFLICT_REPLACE );
-        db.close();
-        updateActivityList();
-        activityAdapter.notifyDataSetChanged();
-    }
+            boolean modified = false;
 
+            if ( !editedActivity.getActivityDate().equals( activityDate ) ) {
+                editedActivity.setActivityDateTime( activityDateTime );
+                modified = true;
+            }
+            if ( activityToAdd == ActivityEnum.FEED ) {
+                if ( !editedActivity.getActivityValue().equals( activityValue ) ) {
+                    editedActivity.setActivityValue( activityValue );
+                    modified = true;
+                }
+            }
+            else if ( activityToAdd == ActivityEnum.CHANGE ) {
 
-    /**
-     * Gets the list of activities for the selected {@link Baby} and updates it in the Recycler View
-     */
-    private void updateActivityList() {
-        final List<Activity> activityList = new ArrayList<>();
+                if ( !editedActivity.getActivityValue().equals( activityValue ) ) {
+                    editedActivity.setActivityValue( activityValue );
+                    modified = true;
+                }
 
-        final SQLiteDatabase db = mDatabaseHelper.getReadableDatabase();
-        final Cursor cursor = db.query(
-                DatabaseHelper.BabyActivityEntry.TABLE_NAME,
-                new String[]{ DatabaseHelper.BabyActivityEntry._ID,
-                        DatabaseHelper.BabyActivityEntry.BABY_COL,
-                        DatabaseHelper.BabyActivityEntry.ACTIVITY,
-                        DatabaseHelper.BabyActivityEntry.ACTIVITY_DATA_COL,
-                        DatabaseHelper.BabyActivityEntry.ACTIVITY_DATE_COL },
-                DatabaseHelper.BabyActivityEntry.BABY_COL + " = " + mSelectedBaby.getBabyId(),
-                null, null, null, null, null );
-
-        while ( cursor.moveToNext() ) {
-
-            // Get Columns
-            final int feedDbIdCol = cursor.getColumnIndex( DatabaseHelper.BabyActivityEntry._ID );
-            final int babyIdCol =
-                    cursor.getColumnIndex( DatabaseHelper.BabyActivityEntry.BABY_COL );
-            final int activityCol =
-                    cursor.getColumnIndex( DatabaseHelper.BabyActivityEntry.ACTIVITY );
-            final int dateMillisCol =
-                    cursor.getColumnIndex( DatabaseHelper.BabyActivityEntry.ACTIVITY_DATE_COL );
-            final int feedCol =
-                    cursor.getColumnIndex( DatabaseHelper.BabyActivityEntry.ACTIVITY_DATA_COL );
-
-            // Get values
-            final int babyId = cursor.getInt( babyIdCol );
-            final String dateMillis = cursor.getString( dateMillisCol );
-            final ActivityEnum activityEnum =
-                    ActivityEnum.getEnum( cursor.getString( activityCol ) );
-            final String feedAmount = cursor.getString( feedCol );
-            final String feedDbId = cursor.getString( feedDbIdCol );
-
-            final Date date = DatabaseHelper.millisToDate( Long.parseLong( dateMillis ) );
-
-            activityList.add( new Activity( feedDbId, babyId, activityEnum, date, feedAmount ) );
+            }
+            if ( modified ) {
+                mActivityViewModel.update( editedActivity );
+            }
         }
+        else {
+            final Activity newActivity = new Activity( mSelectedBaby, activityToAdd,
+                    activityDateTime, activityValue );
 
-        cursor.close();
-        db.close();
-
-        // Sort by date
-        Collections.sort( activityList );
-        Collections.reverse( activityList );
-
-        mActivities = activityList;
-        if ( activityAdapter != null ) {
-            activityAdapter.notify( mActivities );
+            mActivityViewModel.insert( newActivity );
+            // create new one
         }
     }
 
@@ -470,25 +465,25 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
      * @param menuItem a
      * @return a
      */
-    private boolean deleteActivity( final MenuItem menuItem ) {
+    private boolean createDeleteActivityDialog( final MenuItem menuItem ) {
         new AlertDialog.Builder( this )
                 .setTitle( "Delete Feed" )
                 .setMessage( "Are you sure you want to delete this feed entry?" )
                 .setIcon( android.R.drawable.ic_dialog_alert )
-                .setPositiveButton( android.R.string.yes, ( dialog, whichButton ) -> {
-                    final String msg;
-                    if ( mDatabaseHelper.delete( DatabaseHelper.BabyActivityEntry.TABLE_NAME,
-                            DatabaseHelper.BabyActivityEntry._ID + " = " + menuItem.getItemId() ) ) {
-                        msg = "Feed Deleted";
-                        updateActivityList();
-                    }
-                    else {
-                        msg = "Feed Could Not Be Deleted";
-                    }
-                    Toast.makeText( BabyActivity.this, msg, Toast.LENGTH_SHORT ).show();
-                } )
+                .setPositiveButton( android.R.string.yes, deleteActivity( menuItem ) )
                 .setNegativeButton( android.R.string.no, null ).show();
         return true;
+    }
+
+    /**
+     * @param menuItem
+     * @return
+     */
+    private DialogInterface.OnClickListener deleteActivity( final MenuItem menuItem ) {
+        // Delete the activity object if found
+        return ( dialog, whichButton ) -> mActivityAdapter.getActivityList().stream().filter(
+                activity -> ( menuItem.getItemId() == activity.getActivityId() ) )
+                .findAny().ifPresent( activityToDelete -> mActivityViewModel.delete( activityToDelete ) );
     }
 
 
@@ -512,7 +507,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
                 createAndShowActivityDialog( item );
                 return true;
             case "delete":
-                return deleteActivity( item );
+                return createDeleteActivityDialog( item );
             default:
                 return false;
         }

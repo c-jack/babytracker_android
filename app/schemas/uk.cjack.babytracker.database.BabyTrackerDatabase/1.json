@@ -1,0 +1,123 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "c80479fe46aa12ad77bb0a770a1adca1",
+    "entities": [
+      {
+        "tableName": "baby_table",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`babyId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `babyName` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "babyId",
+            "columnName": "babyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "babyName",
+            "columnName": "babyName",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "babyId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "activity_table",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`activityId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `babyId` INTEGER NOT NULL, `activityTypeValue` TEXT, `activityDateTime` TEXT, `activityDate` TEXT, `activityTime` TEXT, `activityValue` TEXT, `activityValueDetail` TEXT, FOREIGN KEY(`babyId`) REFERENCES `baby_table`(`babyId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "activityId",
+            "columnName": "activityId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "babyId",
+            "columnName": "babyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activityTypeValue",
+            "columnName": "activityTypeValue",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "activityDateTime",
+            "columnName": "activityDateTime",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "activityDate",
+            "columnName": "activityDate",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "activityTime",
+            "columnName": "activityTime",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "activityValue",
+            "columnName": "activityValue",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "activityValueDetail",
+            "columnName": "activityValueDetail",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "activityId"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_activity_table_babyId",
+            "unique": false,
+            "columnNames": [
+              "babyId"
+            ],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_activity_table_babyId` ON `${TABLE_NAME}` (`babyId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "baby_table",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "babyId"
+            ],
+            "referencedColumns": [
+              "babyId"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c80479fe46aa12ad77bb0a770a1adca1')"
+    ]
+  }
+}

@@ -2,10 +2,11 @@ package uk.cjack.babytracker.enums;
 
 import java.util.Objects;
 
-import uk.cjack.babytracker.model.Activity;
+import uk.cjack.babytracker.R;
 
 public enum ActivityEnum {
-    CHANGE( new ActivityConfig("change", null) ), FEED( new ActivityConfig("feed", "ml") );
+    CHANGE( new ActivityConfig( "change", null, R.drawable.nappy ) ),
+    FEED( new ActivityConfig( "feed", "ml", R.drawable.feed ) );
 
     private final ActivityConfig config;
 
@@ -16,9 +17,11 @@ public enum ActivityEnum {
     public String getName() {
         return this.config.getName();
     }
+
     public String getUnit() {
         return this.config.getUnit();
     }
+
     public ActivityConfig config() {
         return this.config;
     }
@@ -35,18 +38,18 @@ public enum ActivityEnum {
     }
 
 
-
     /**
      *
      */
     public static class ActivityConfig {
         private final String name;
         private final String unit;
+        private final int resourceImage;
 
-        ActivityConfig( final String name, final String unit )
-        {
+        ActivityConfig( final String name, final String unit, final int resourceImage ) {
             this.name = name;
             this.unit = unit;
+            this.resourceImage = resourceImage;
         }
 
         public String getName() {
@@ -56,5 +59,10 @@ public enum ActivityEnum {
         public String getUnit() {
             return unit;
         }
+
+        public int getResourceImage() {
+            return resourceImage;
+        }
+
     }
 }

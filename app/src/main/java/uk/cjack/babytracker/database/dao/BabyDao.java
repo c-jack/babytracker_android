@@ -20,7 +20,7 @@ public interface BabyDao {
     @Query("DELETE FROM baby_table")
     void deleteAll();
 
-    @Query("SELECT * from baby_table ORDER BY babyName ASC")
+    @Query("SELECT * FROM baby_table ORDER BY babyName ASC")
     LiveData<List<Baby>> getAllBabies();
 
     @Delete

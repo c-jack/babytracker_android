@@ -11,25 +11,22 @@
         android:layout_width="0dp"
         android:layout_height="28dp"
         android:layout_marginStart="8dp"
-        android:layout_marginEnd="4dp"
         android:layout_marginBottom="4dp"
         android:gravity="clip_horizontal|center|clip_vertical|center_horizontal"
         android:maxLength="5"
         android:maxLines="1"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/nappyChangeTypeIcon"
         app:layout_constraintStart_toEndOf="@+id/activityTime" />
 
     <TextView
         android:id="@+id/activityTime"
-        android:layout_width="217dp"
+        android:layout_width="250dp"
         android:layout_height="28dp"
-        android:layout_marginStart="8dp"
         android:layout_marginBottom="4dp"
         android:gravity="clip_horizontal|clip_vertical|center_vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/feedAmount"
-        app:layout_constraintStart_toEndOf="@+id/activityIcon" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/activityDate"
@@ -49,10 +46,22 @@
         android:id="@+id/activityIcon"
         android:layout_width="15dp"
         android:layout_height="15dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/activityTime"
+        app:srcCompat="@android:drawable/btn_star" />
+
+    <ImageView
+        android:id="@+id/nappyChangeTypeIcon"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginEnd="40dp"
+        android:layout_marginBottom="4dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/activityValue"
         app:srcCompat="@android:drawable/btn_star" />
 </androidx.constraintlayout.widget.ConstraintLayout>

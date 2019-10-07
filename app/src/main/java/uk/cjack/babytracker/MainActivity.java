@@ -27,6 +27,10 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
     private RecyclerView mBabyNameView;
     private BabyViewModel mBabyViewModel;
 
+
+    /**
+     * Setup of objects when the activity is loaded
+     */
     @Override
     protected void onCreate( final Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
@@ -69,7 +73,7 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
     /**
      * Toast sample
      *
-     * @param msg
+     * @param msg message to display in the toast
      */
     private void makeToast( final String msg ) {
         Toast.makeText( MainActivity.this, msg, Toast.LENGTH_SHORT ).show();
@@ -79,8 +83,8 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
     /**
      * Long press on activity
      *
-     * @param item
-     * @return
+     * @param item menu item selected in the context menu
+     * @return bool
      */
     @Override
     public boolean onContextItemSelected( final MenuItem item ) {
@@ -89,7 +93,7 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
                 createEditBabyDialog( item );
                 return true;
             case "delete":
-                return deleteBaby( item );
+                return createDeleteBabyDialog( item );
             default:
                 return false;
         }
@@ -102,24 +106,34 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
      * @param menuItem a
      * @return a
      */
-    private boolean deleteBaby( final MenuItem menuItem ) {
+    private boolean createDeleteBabyDialog( final MenuItem menuItem ) {
         new AlertDialog.Builder( this )
                 .setTitle( getString( R.string.delete_baby ) )
                 .setMessage( "Are you sure you want to delete this baby?" )
                 .setIcon( android.R.drawable.ic_dialog_alert )
-                .setPositiveButton( android.R.string.yes, ( dialog, whichButton ) -> {
-                    final Baby selectedBaby =
-                            mBabyListAdapter.getBabyList().stream().filter(
-                                    activity -> ( menuItem.getItemId() == activity.getBabyId() ) )
-                                    .findAny().orElse( null );
-
-                    mBabyViewModel.delete( selectedBaby );
-
-                    Toast.makeText( MainActivity.this, "Deleted", Toast.LENGTH_SHORT ).show();
-
-                } )
+                .setPositiveButton( android.R.string.yes, deleteBaby( menuItem ) )
                 .setNegativeButton( android.R.string.no, null ).show();
         return true;
+    }
+
+
+    /**
+     * Deletes the Baby from the DB
+     * @param menuItem
+     * @return
+     */
+    private DialogInterface.OnClickListener deleteBaby( final MenuItem menuItem ) {
+        return ( dialog, whichButton ) -> {
+            final Baby selectedBaby =
+                    mBabyListAdapter.getBabyList().stream().filter(
+                            activity -> ( menuItem.getItemId() == activity.getBabyId() ) )
+                            .findAny().orElse( null );
+
+            mBabyViewModel.delete( selectedBaby );
+
+            Toast.makeText( MainActivity.this, "Deleted", Toast.LENGTH_SHORT ).show();
+
+        };
     }
 
     /**
