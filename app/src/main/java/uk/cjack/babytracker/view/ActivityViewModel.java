@@ -10,21 +10,30 @@ import java.util.List;
 import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.database.repository.ActivityRepository;
+import uk.cjack.babytracker.enums.ActivityEnum;
+import uk.cjack.babytracker.model.ActivitySummary;
 
 public class ActivityViewModel extends AndroidViewModel {
 
     private final ActivityRepository mActivityRepository;
     private final LiveData<List<Activity>> mAllActivitiesForBaby;
+    private final LiveData<List<ActivitySummary>> mDailyFeedTotals;
 
 
     public ActivityViewModel( final Application application, final Baby baby ) {
         super( application );
         mActivityRepository = new ActivityRepository( application, baby );
         mAllActivitiesForBaby = mActivityRepository.getAllActivitiesForBaby();
+        mDailyFeedTotals = mActivityRepository.getDailyFeedTotals();
     }
 
     public LiveData<List<Activity>> getAllActivitiesForBaby() {
         return mAllActivitiesForBaby;
+    }
+
+    public LiveData<List<ActivitySummary>> getDailyFeedTotals()
+    {
+        return mDailyFeedTotals;
     }
 
     public void insert( final Activity activity ) {

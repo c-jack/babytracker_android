@@ -17,11 +17,13 @@ import uk.cjack.babytracker.R;
 import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.enums.ChangeTypeEnum;
+import uk.cjack.babytracker.model.ActivitySummary;
 
 public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
 
     private static final int CLEAR_IMAGE = android.R.color.transparent;
     private List<Activity> mActivityList;
+    private List<ActivitySummary> mActivitySummaryList;
     private String mActivityDate;
     private Context mContext;
 
@@ -54,10 +56,21 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         final Activity activity = mActivityList.get( position );
         final ViewGroup.LayoutParams lp = viewHolder.itemView.getLayoutParams();
 
-        if ( !activity.getActivityDate().equals( mActivityDate )) {
+        if ( !activity.getActivityDate().equals( mActivityDate ) ) {
             mActivityDate = activity.getActivityDate();
             viewHolder.activityDateTextView.setText( activity.getActivityDate() );
-            lp.height = ( int ) mContext.getResources().getDimension( R.dimen.activity_height_with_date );
+
+            if ( mActivitySummaryList != null ) {
+                mActivitySummaryList.stream()
+                        .filter( activitySummary -> (
+                                mActivityDate.equals( activitySummary.getGroupValue() ) ) )
+                        .findAny()
+                        .ifPresent( summary ->
+                                viewHolder.activitySummaryTextView
+                                        .setText( summary.getResultValue() ) );
+            }
+            lp.height =
+                    ( int ) mContext.getResources().getDimension( R.dimen.activity_height_with_date );
         }
         else {
             lp.height = ( int ) mContext.getResources().getDimension( R.dimen.activity_height );
@@ -126,12 +139,22 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         return mActivityList;
     }
 
+    public void setActivitySummaryList( final List<ActivitySummary> activitySummaryList ) {
+        mActivitySummaryList = activitySummaryList;
+        notifyDataSetChanged();
+    }
+
+    public List<ActivitySummary> getActivitySummaryList() {
+        return mActivitySummaryList;
+    }
+
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
         // Your holder should contain a member variable
         // for any view that will be set as you render a row
         TextView activityDateTextView;
         TextView activityTimeTextView;
         TextView activityValueTextView;
+        TextView activitySummaryTextView;
         ImageView activityIconTextView;
         ImageView nappyChangeIcon;
 
@@ -147,6 +170,7 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
             activityDateTextView = itemView.findViewById( R.id.activityDate );
             activityTimeTextView = itemView.findViewById( R.id.activityTime );
             activityValueTextView = itemView.findViewById( R.id.activityValue );
+            activitySummaryTextView = itemView.findViewById( R.id.activitySummary );
             activityIconTextView = itemView.findViewById( R.id.activityIcon );
             nappyChangeIcon = itemView.findViewById( R.id.nappyChangeTypeIcon );
 

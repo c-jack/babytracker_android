@@ -87,8 +87,12 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
 
         mActivityViewModel = ViewModelProviders.of( this,
                 new ActivityViewModelFactory( this.getApplication(), selectedBaby ) ).get( ActivityViewModel.class );
+
         mActivityViewModel.getAllActivitiesForBaby().observe( this,
                 activityList -> mActivityAdapter.setActivityList( activityList ) );
+
+        mActivityViewModel.getDailyFeedTotals().observe( this,
+                activitySummaryList -> mActivityAdapter.setActivitySummaryList( activitySummaryList ) );
 
         mActivityAdapter = new ActivityAdapter( this );
         mActivityListView.setAdapter( mActivityAdapter );
