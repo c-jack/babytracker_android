@@ -1,4 +1,4 @@
 <resources>
-    <dimen name="activity_height">36dp</dimen>
+    <dimen name="activity_height">30dp</dimen>
     <dimen name="activity_height_with_date">115dp</dimen>
 </resources>

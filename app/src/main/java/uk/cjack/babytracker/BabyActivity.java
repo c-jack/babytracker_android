@@ -72,7 +72,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     @Override
     protected void onCreate( final Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
-        setContentView( R.layout.baby_screen );
+        setContentView( R.layout.activity_screen );
 
         // Get ListView
         mActivityListView = findViewById( R.id.feedListView );
@@ -158,7 +158,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
              * Set the view based on the activity
              */
             if ( activityToAdd.equals( ActivityEnum.FEED ) ) {
-                babyActivity = R.layout.add_activity;
+                babyActivity = R.layout.activity_screen_add_activity;
                 activityIconId = R.drawable.feed;
 
                 if ( activityDbId != null ) {
@@ -170,7 +170,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
             }
             else if ( activityToAdd.equals( ActivityEnum.CHANGE ) ) {
 
-                babyActivity = R.layout.add_activity;
+                babyActivity = R.layout.activity_screen_add_activity;
                 activityIconId = R.drawable.nappy;
                 nappyChangeTypeGroupVisibility = View.VISIBLE;
                 activityValueVisibility = View.INVISIBLE;
@@ -184,7 +184,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
                 }
             }
             else {
-                babyActivity = R.layout.add_activity;
+                babyActivity = R.layout.activity_screen_add_activity;
                 title = R.string.edit_feed_title;
                 activityIconId = R.drawable.nappy;
             }

@@ -34,7 +34,7 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
     @Override
     protected void onCreate( final Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
-        setContentView( R.layout.activity_main );
+        setContentView( R.layout.baby_name_screen );
 
         // Set toolbar
         final Toolbar toolbar = findViewById( R.id.toolbar );

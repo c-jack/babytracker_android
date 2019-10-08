@@ -41,7 +41,7 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         final LayoutInflater inflater = LayoutInflater.from( context );
 
         // Inflate the custom layout
-        final View feed_item_view = inflater.inflate( R.layout.activity_item, parent, false );
+        final View feed_item_view = inflater.inflate( R.layout.activity_screen_item, parent, false );
 
         // Return a new holder instance
         return new ViewHolder( feed_item_view );

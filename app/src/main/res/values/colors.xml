@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimary">#07334E</color>
     <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorAccent">#0288D1</color>
+    <color name="darkTint">#22000000</color>
+
 
     <color name="sa_green">#1E9618</color>
     <color name="sa_gray">#CCCCCC</color>
