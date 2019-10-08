@@ -9,20 +9,22 @@ import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
 import java.io.Serializable;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
+import uk.cjack.babytracker.constants.DatabaseConstants;
 import uk.cjack.babytracker.database.db.TimestampConverter;
 import uk.cjack.babytracker.enums.ActivityEnum;
 
 import static androidx.room.ForeignKey.CASCADE;
+import static uk.cjack.babytracker.constants.DatabaseConstants.ACTIVITY_TABLE_NAME;
+import static uk.cjack.babytracker.constants.DatabaseConstants.BABY_TABLE_PK;
+import static uk.cjack.babytracker.utils.DateTimeUtils.getDateStringFromDate;
+import static uk.cjack.babytracker.utils.DateTimeUtils.getTimeFromDate;
 
-@Entity( tableName = "activity_table",
+@Entity( tableName = ACTIVITY_TABLE_NAME,
         foreignKeys = @ForeignKey( entity = Baby.class,
-                parentColumns = "babyId",
-                childColumns = "babyId",
+                parentColumns = BABY_TABLE_PK,
+                childColumns = BABY_TABLE_PK,
                 onDelete = CASCADE ) )
 public class Activity implements Serializable, Comparable<Activity> {
 
@@ -63,22 +65,44 @@ public class Activity implements Serializable, Comparable<Activity> {
     private String activityValue;
     private String activityValueDetail;
 
-    private static final String DATE_FORMAT = "EEEE d MMM yyyy";
-    private static final String TIME_FORMAT = "HH:mm a";
 
-
-
+    /**
+     * Default empty constructor as required by the compiler
+     */
     public Activity() {
     }
 
+
+    /**
+     * Uses the {@code activityDateTime} value to set the individual Date and Time values
+     */
+    private void setActivityDateTimeValues() {
+
+        this.activityDate = getDateStringFromDate( this.activityDateTime );
+        this.activityTime = getTimeFromDate( this.activityDateTime );
+    }
+
+
+    /**
+     * Sets the Baby value
+     * @param baby {@link Baby} value to set
+     */
     public void setBaby( @NonNull final Baby baby ) {
         this.baby = baby;
     }
 
+    /**
+     * Sets the BabyId value
+     * @param babyId BabyId value to set
+     */
     public void setBabyId( final int babyId ) {
         this.babyId = babyId;
     }
 
+    /**
+     * Sets the ActivityType value
+     * @param activityTypeValue x
+     */
     public void setActivityTypeValue( @NonNull final String activityTypeValue ) {
         this.activityTypeValue = activityTypeValue;
     }
@@ -102,31 +126,6 @@ public class Activity implements Serializable, Comparable<Activity> {
     @NonNull
     public String getActivityValue() {
         return activityValue;
-    }
-
-    private void setActivityDateTimeValues() {
-
-        this.activityDate = getDateStringFromDate( this.activityDateTime );
-        this.activityTime = getTimeFromDate( this.activityDateTime );
-    }
-
-
-    /**
-     * @param dateToConvert
-     * @return
-     */
-    public static String getTimeFromDate( final Date dateToConvert ) {
-        final DateFormat timeFormat = new SimpleDateFormat( TIME_FORMAT, Locale.getDefault() );
-        return timeFormat.format( dateToConvert );
-    }
-
-    /**
-     * @param dateToConvert
-     * @return
-     */
-    public static String getDateStringFromDate( final Date dateToConvert ) {
-        final DateFormat dateFormat = new SimpleDateFormat( DATE_FORMAT, Locale.getDefault() );
-        return dateFormat.format( dateToConvert );
     }
 
 

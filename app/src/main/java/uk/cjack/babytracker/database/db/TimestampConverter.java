@@ -9,13 +9,13 @@ import java.util.Date;
 import java.util.Locale;
 
 public class TimestampConverter {
-    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
     @TypeConverter
     public static Date fromTimestamp( final String value) {
         if (value != null) {
             try {
-                return dateFormat.parse(value);
+                return DATE_FORMAT.parse(value);
             } catch ( final ParseException e) {
                 e.printStackTrace();
             }
@@ -28,7 +28,7 @@ public class TimestampConverter {
     @TypeConverter
     public static String toTimestamp( final Date dateValue) {
         if (dateValue != null) {
-            return dateFormat.format( dateValue );
+            return DATE_FORMAT.format( dateValue );
         } else {
             return null;
         }

@@ -1,7 +1,6 @@
 package uk.cjack.babytracker.database.repository;
 
 import android.app.Application;
-import android.os.AsyncTask;
 
 import androidx.lifecycle.LiveData;
 
@@ -11,6 +10,7 @@ import uk.cjack.babytracker.database.BabyTrackerDatabase;
 import uk.cjack.babytracker.database.dao.ActivityDao;
 import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.database.entities.Baby;
+import uk.cjack.babytracker.database.enums.DatabaseActionEnum;
 import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.model.ActivitySummary;
 
@@ -20,6 +20,12 @@ public class ActivityRepository {
     private final LiveData<List<Activity>> mAllActivitiesForBaby;
     private final LiveData<List<ActivitySummary>> mDailyFeedTotals;
 
+    /**
+     * Constructor
+     *
+     * @param application application
+     * @param baby        the {@link Baby} to filter by in the filtered query
+     */
     public ActivityRepository( final Application application, final Baby baby ) {
         final BabyTrackerDatabase db = BabyTrackerDatabase.getDatabase( application );
         mActivityDao = db.activityDao();
@@ -36,70 +42,30 @@ public class ActivityRepository {
         return mDailyFeedTotals;
     }
 
+    /**
+     * Performs an INSERT query in a background thread
+     *
+     * @param activity the {@link Activity} object to insert
+     */
     public void insert( final Activity activity ) {
-        new InsertAsyncTask( mActivityDao ).execute( activity );
+        new BabyAsyncTask( mActivityDao, DatabaseActionEnum.INSERT ).execute( activity );
     }
 
-    public void delete( final Activity activity ) {
-        new DeleteAsyncTask( mActivityDao ).execute( activity );
-    }
-
+    /**
+     * Performs an UPDATE query in a background thread
+     *
+     * @param activity the {@link Baby} object to insert
+     */
     public void update( final Activity activity ) {
-        new UpdateAsyncTask( mActivityDao ).execute( activity );
-    }
-
-
-    /**
-     * Async task class
-     */
-    private static class InsertAsyncTask extends AsyncTask<Activity, Void, Void> {
-
-        private final ActivityDao mAsyncTaskDao;
-
-        InsertAsyncTask( final ActivityDao dao ) {
-            mAsyncTaskDao = dao;
-        }
-
-        @Override
-        protected Void doInBackground( final Activity... params ) {
-            mAsyncTaskDao.insert( params[0] );
-            return null;
-        }
+        new BabyAsyncTask( mActivityDao, DatabaseActionEnum.UPDATE ).execute( activity );
     }
 
     /**
-     * Async task class
+     * Performs an DELETE query in a background thread
+     *
+     * @param activity the {@link Activity} object to insert
      */
-    private static class DeleteAsyncTask extends AsyncTask<Activity, Void, Void> {
-
-        private final ActivityDao mAsyncTaskDao;
-
-        DeleteAsyncTask( final ActivityDao dao ) {
-            mAsyncTaskDao = dao;
-        }
-
-        @Override
-        protected Void doInBackground( final Activity... params ) {
-            mAsyncTaskDao.delete( params[0] );
-            return null;
-        }
-    }
-
-    /**
-     * Async task class
-     */
-    private static class UpdateAsyncTask extends AsyncTask<Activity, Void, Void> {
-
-        private final ActivityDao mAsyncTaskDao;
-
-        UpdateAsyncTask( final ActivityDao dao ) {
-            mAsyncTaskDao = dao;
-        }
-
-        @Override
-        protected Void doInBackground( final Activity... params ) {
-            mAsyncTaskDao.update( params[0] );
-            return null;
-        }
+    public void delete( final Activity activity ) {
+        new BabyAsyncTask( mActivityDao, DatabaseActionEnum.DELETE ).execute( activity );
     }
 }

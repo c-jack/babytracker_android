@@ -10,7 +10,6 @@ import java.util.List;
 import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.database.repository.ActivityRepository;
-import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.model.ActivitySummary;
 
 public class ActivityViewModel extends AndroidViewModel {

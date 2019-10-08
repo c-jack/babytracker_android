@@ -42,7 +42,7 @@ import static uk.cjack.babytracker.utils.DateTimeUtils.getDateStringFromDate;
 import static uk.cjack.babytracker.utils.DateTimeUtils.getTimeFromDate;
 import static uk.cjack.babytracker.utils.DateTimeUtils.isToday;
 
-public class BabyActivity extends BaseActivity implements AlertDialog.OnClickListener,
+public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClickListener,
         DatePickerDialog.OnDateSetListener,
         TimePickerDialog.OnTimeSetListener {
 
@@ -51,6 +51,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
 
     private RecyclerView mActivityListView;
     private ActivityAdapter mActivityAdapter;
+    private String date;
     private Baby mSelectedBaby;
     private TextView dateField;
     private TextView feedDaySelect;
@@ -195,7 +196,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
             final AlertDialog dialog = new AlertDialog.Builder( this )
                     .setView( babyActivity )
                     .setPositiveButton( addOrSaveButtonText, this )
-                    .setNegativeButton( getString( R.string.cancel_button_text), null )
+                    .setNegativeButton( getString( R.string.cancel_button_text ), null )
                     .create();
             dialog.show();
 
@@ -230,7 +231,8 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
             if ( changeTypeEnum != null ) {
                 nappyChangeTypeGroup.clearCheck();
                 final ChangeTypeEnum.ChangeConfig config = changeTypeEnum.getConfig();
-                final RadioButton selectedRadioButton = dialog.findViewById( config.getRadioButtonId() );
+                final RadioButton selectedRadioButton =
+                        dialog.findViewById( config.getRadioButtonId() );
                 selectedRadioButton.setChecked( true );
             }
 
@@ -238,14 +240,15 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
              * Set the listeners for the Date and Time
              */
             feedDaySelect.setOnClickListener( v -> {
-                datePickerDialog = DatePickerDialog.newInstance( BabyActivity.this, initialTime );
+                datePickerDialog = DatePickerDialog.newInstance( BabyActivityDay.this,
+                        initialTime );
                 datePickerDialog.setThemeDark( false );
                 datePickerDialog.showYearPickerFirst( false );
                 datePickerDialog.show( getFragmentManager(), "DatePickerDialog" );
             } );
 
             timeField.setOnClickListener( v -> {
-                timePickerDialog = TimePickerDialog.newInstance( BabyActivity.this, false );
+                timePickerDialog = TimePickerDialog.newInstance( BabyActivityDay.this, false );
                 timePickerDialog.setThemeDark( false );
                 timePickerDialog.show( getFragmentManager(), "TimePickerDialog" );
                 if ( item != null ) {
@@ -332,7 +335,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
 
         final String time = setTimeField( timeSet.getTimeInMillis() );
 
-        Toast.makeText( BabyActivity.this, time, Toast.LENGTH_LONG ).show();
+        Toast.makeText( BabyActivityDay.this, time, Toast.LENGTH_LONG ).show();
 
         dateField.setText( String.valueOf( timeSet.getTimeInMillis() ) );
     }
@@ -363,7 +366,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
 
         final String dateString = setDayField( dateSet.getTimeInMillis() );
 
-        Toast.makeText( BabyActivity.this, dateString, Toast.LENGTH_LONG ).show();
+        Toast.makeText( BabyActivityDay.this, dateString, Toast.LENGTH_LONG ).show();
 
         dateField.setText( String.valueOf( dateSet.getTimeInMillis() ) );
 

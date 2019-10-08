@@ -20,13 +20,23 @@ public interface ActivityDao {
     @Insert
     void insert( Activity Activity );
 
-    @Query( "DELETE FROM activity_table" )
+    @Query( "DELETE " +
+            "FROM activity_table" )
     void deleteAll();
 
-    @Query( "SELECT * FROM activity_table WHERE babyId = :babyId ORDER BY activityDateTime DESC" )
+    @Query( "SELECT " +
+            "* " +
+            "FROM activity_table " +
+            "WHERE babyId = :babyId " +
+            "ORDER BY activityDateTime DESC" )
     LiveData<List<Activity>> getActivitiesForBaby( final int babyId );
 
-    @Query( "SELECT activityDate 'groupValue', SUM(activityValue) 'resultValue' FROM activity_table WHERE activityTypeValue = :feedValue GROUP BY activityDate")
+    @Query( "SELECT " +
+            "activityDate 'groupValue', " +
+            "SUM(activityValue) 'resultValue' " +
+            "FROM activity_table " +
+            "WHERE activityTypeValue = :feedValue " +
+            "GROUP BY activityDate")
     LiveData<List<ActivitySummary>> getDailyFeedTotals( final String feedValue );
 
     @Delete
