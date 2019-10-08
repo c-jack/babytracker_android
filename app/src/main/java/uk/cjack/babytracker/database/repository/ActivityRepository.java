@@ -12,13 +12,16 @@ import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.database.enums.DatabaseActionEnum;
 import uk.cjack.babytracker.enums.ActivityEnum;
-import uk.cjack.babytracker.model.ActivitySummary;
+import uk.cjack.babytracker.model.DayActivitySummary;
+import uk.cjack.babytracker.model.DayActivityTotals;
 
 public class ActivityRepository {
 
     private final ActivityDao mActivityDao;
     private final LiveData<List<Activity>> mAllActivitiesForBaby;
-    private final LiveData<List<ActivitySummary>> mDailyFeedTotals;
+    private final LiveData<List<Activity>> mAllActivitiesForBabyByDate;
+    private final LiveData<List<DayActivitySummary>> mDailyFeedSummary;
+    private final LiveData<List<DayActivityTotals>> mDailyFeedTotals;
 
     /**
      * Constructor
@@ -26,19 +29,26 @@ public class ActivityRepository {
      * @param application application
      * @param baby        the {@link Baby} to filter by in the filtered query
      */
-    public ActivityRepository( final Application application, final Baby baby ) {
+    public ActivityRepository( final Application application, final Baby baby, final String filterDate ) {
         final BabyTrackerDatabase db = BabyTrackerDatabase.getDatabase( application );
         mActivityDao = db.activityDao();
         mAllActivitiesForBaby = mActivityDao.getActivitiesForBaby( baby.getBabyId() );
-
-        mDailyFeedTotals = mActivityDao.getDailyFeedTotals( ActivityEnum.FEED.getName() );
+        mAllActivitiesForBabyByDate = mActivityDao.getActivitiesForBabyByDate( baby.getBabyId(), filterDate );
+        mDailyFeedSummary = mActivityDao.getDailyFeedSummary( baby.getBabyId(), ActivityEnum.FEED.getName() );
+        mDailyFeedTotals = mActivityDao.getDailyActivityTotals( baby.getBabyId() );
     }
 
     public LiveData<List<Activity>> getAllActivitiesForBaby() {
         return mAllActivitiesForBaby;
     }
+    public LiveData<List<Activity>> getAllActivitiesForBabyByDate() {
+        return mAllActivitiesForBabyByDate;
+    }
 
-    public LiveData<List<ActivitySummary>> getDailyFeedTotals() {
+    public LiveData<List<DayActivitySummary>> getDailyFeedSummary() {
+        return mDailyFeedSummary;
+    }
+    public LiveData<List<DayActivityTotals>> getDailyFeedTotals() {
         return mDailyFeedTotals;
     }
 

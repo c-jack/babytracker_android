@@ -10,19 +10,24 @@ import java.util.List;
 import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.database.repository.ActivityRepository;
-import uk.cjack.babytracker.model.ActivitySummary;
+import uk.cjack.babytracker.model.DayActivitySummary;
+import uk.cjack.babytracker.model.DayActivityTotals;
 
 public class ActivityViewModel extends AndroidViewModel {
 
     private final ActivityRepository mActivityRepository;
     private final LiveData<List<Activity>> mAllActivitiesForBaby;
-    private final LiveData<List<ActivitySummary>> mDailyFeedTotals;
+    private final LiveData<List<Activity>> mAllActivitiesForBabyByDate;
+    private final LiveData<List<DayActivitySummary>> getDailyFeedSummary;
+    private final LiveData<List<DayActivityTotals>> mDailyFeedTotals;
 
 
-    public ActivityViewModel( final Application application, final Baby baby ) {
+    public ActivityViewModel( final Application application, final Baby baby, final String date ) {
         super( application );
-        mActivityRepository = new ActivityRepository( application, baby );
+        mActivityRepository = new ActivityRepository( application, baby, date );
         mAllActivitiesForBaby = mActivityRepository.getAllActivitiesForBaby();
+        mAllActivitiesForBabyByDate = mActivityRepository.getAllActivitiesForBabyByDate();
+        getDailyFeedSummary = mActivityRepository.getDailyFeedSummary();
         mDailyFeedTotals = mActivityRepository.getDailyFeedTotals();
     }
 
@@ -30,8 +35,15 @@ public class ActivityViewModel extends AndroidViewModel {
         return mAllActivitiesForBaby;
     }
 
-    public LiveData<List<ActivitySummary>> getDailyFeedTotals()
-    {
+    public LiveData<List<Activity>> getAllActivitiesForBabyByDate() {
+        return mAllActivitiesForBabyByDate;
+    }
+
+    public LiveData<List<DayActivitySummary>> getDailyFeedSummary() {
+        return getDailyFeedSummary;
+    }
+
+    public LiveData<List<DayActivityTotals>> getDailyFeedTotals() {
         return mDailyFeedTotals;
     }
 

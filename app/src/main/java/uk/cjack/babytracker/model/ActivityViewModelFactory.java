@@ -12,18 +12,20 @@ import uk.cjack.babytracker.view.ActivityViewModel;
 public class ActivityViewModelFactory implements ViewModelProvider.Factory {
     private final Application mApplication;
     private final Baby mSelectedBaby;
+    private final String mFilterDate;
 
 
-    public ActivityViewModelFactory( final Application application, final Baby baby ) {
+    public ActivityViewModelFactory( final Application application, final Baby baby, final String filterDate ) {
         mApplication = application;
         mSelectedBaby = baby;
+        mFilterDate = filterDate;
     }
 
 
     @NonNull
     @Override
     public <T extends ViewModel> T create( @NonNull final Class<T> modelClass ) {
-        return ( T ) new ActivityViewModel( mApplication, mSelectedBaby );
+        return ( T ) new ActivityViewModel( mApplication, mSelectedBaby, mFilterDate );
     }
 
 }

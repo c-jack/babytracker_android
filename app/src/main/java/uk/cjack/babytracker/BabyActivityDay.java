@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import uk.cjack.babytracker.adapters.ActivityAdapter;
+import uk.cjack.babytracker.adapters.ActivityDayAdapter;
 import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.enums.ActivityEnum;
@@ -50,7 +51,7 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
     public static final String TITLE = "%s's Activity";
 
     private RecyclerView mActivityListView;
-    private ActivityAdapter mActivityAdapter;
+    private ActivityDayAdapter mActivityDayAdapter;
     private String date;
     private Baby mSelectedBaby;
     private TextView dateField;
@@ -78,6 +79,8 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
         // Get ListView
         mActivityListView = findViewById( R.id.feedListView );
 
+        final String filterDate = "";
+
         final TextView selectedBabyNameText = findViewById( R.id.selectedBabyName );
 
         final Baby selectedBaby = ( Baby ) getIntent().getSerializableExtra( SELECTED_BABY );
@@ -87,16 +90,13 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
         }
 
         mActivityViewModel = ViewModelProviders.of( this,
-                new ActivityViewModelFactory( this.getApplication(), selectedBaby ) ).get( ActivityViewModel.class );
-
-        mActivityViewModel.getAllActivitiesForBaby().observe( this,
-                activityList -> mActivityAdapter.setActivityList( activityList ) );
+                new ActivityViewModelFactory( this.getApplication(), selectedBaby, filterDate ) ).get( ActivityViewModel.class );
 
         mActivityViewModel.getDailyFeedTotals().observe( this,
-                activitySummaryList -> mActivityAdapter.setActivitySummaryList( activitySummaryList ) );
+                dailyFeedTotals -> mActivityDayAdapter.setDayActivityList( dailyFeedTotals ) );
 
-        mActivityAdapter = new ActivityAdapter( this );
-        mActivityListView.setAdapter( mActivityAdapter );
+        mActivityDayAdapter = new ActivityDayAdapter( this );
+        mActivityListView.setAdapter( mActivityDayAdapter );
         mActivityListView.setLayoutManager( new LinearLayoutManager( this ) );
 
         // Add SpeedView items
@@ -136,7 +136,7 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
 
         if ( item != null ) {
             final Activity thisActivity =
-                    mActivityAdapter.getActivityList().stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
+                    mActivityDayAdapter.getActivityList().stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
 
             if ( thisActivity != null ) {
                 activityToAdd = ActivityEnum.getEnum( thisActivity.getActivityTypeValue() );
@@ -406,7 +406,7 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
     private void saveActivity( final long activityId ) {
 
         final Activity editedActivity =
-                mActivityAdapter.getActivityList().stream().filter(
+                mActivityDayAdapter.getActivityList().stream().filter(
                         activity -> ( activityId == activity.getActivityId() ) )
                         .findAny().orElse( null );
 
@@ -488,7 +488,7 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
      */
     private DialogInterface.OnClickListener deleteActivity( final MenuItem menuItem ) {
         // Delete the activity object if found
-        return ( dialog, whichButton ) -> mActivityAdapter.getActivityList().stream().filter(
+        return ( dialog, whichButton ) -> mActivityDayAdapter.getActivityList().stream().filter(
                 activity -> ( menuItem.getItemId() == activity.getActivityId() ) )
                 .findAny().ifPresent( activityToDelete -> mActivityViewModel.delete( activityToDelete ) );
     }

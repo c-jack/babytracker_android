@@ -2,7 +2,7 @@ package uk.cjack.babytracker.model;
 
 import androidx.room.ColumnInfo;
 
-public class ActivitySummary {
+public class DayActivitySummary {
     @ColumnInfo( name = "groupValue" )
     private String groupValue;
 

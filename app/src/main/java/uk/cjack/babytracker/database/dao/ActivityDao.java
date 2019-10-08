@@ -10,9 +10,8 @@ import androidx.room.Update;
 import java.util.List;
 
 import uk.cjack.babytracker.database.entities.Activity;
-import uk.cjack.babytracker.database.entities.Baby;
-import uk.cjack.babytracker.enums.ActivityEnum;
-import uk.cjack.babytracker.model.ActivitySummary;
+import uk.cjack.babytracker.model.DayActivitySummary;
+import uk.cjack.babytracker.model.DayActivityTotals;
 
 @Dao
 public interface ActivityDao {
@@ -32,12 +31,35 @@ public interface ActivityDao {
     LiveData<List<Activity>> getActivitiesForBaby( final int babyId );
 
     @Query( "SELECT " +
+            "* " +
+            "FROM activity_table " +
+            "WHERE babyId = :babyId " +
+            "AND activityDate = :activityDate " +
+            "ORDER BY activityDateTime DESC" )
+    LiveData<List<Activity>> getActivitiesForBabyByDate( final int babyId, final String activityDate );
+
+    @Query( "SELECT " +
             "activityDate 'groupValue', " +
             "SUM(activityValue) 'resultValue' " +
             "FROM activity_table " +
-            "WHERE activityTypeValue = :feedValue " +
+            "WHERE babyId = :babyId " +
+            "AND activityTypeValue = :feedValue " +
             "GROUP BY activityDate")
-    LiveData<List<ActivitySummary>> getDailyFeedTotals( final String feedValue );
+    LiveData<List<DayActivitySummary>> getDailyFeedSummary( final int babyId, final String feedValue );
+
+    @Query( "SELECT " +
+            "activityDate 'date', " +
+            "SUM(CASE WHEN activityTypeValue = \"feed\" " +
+                "THEN activityValue ELSE 0 END) 'feedQty', " +
+            "SUM(CASE WHEN activityTypeValue = \"change\" AND activityValue = \"soiled\" " +
+                "THEN 1 ELSE 0 END) 'soiledQty', " +
+            "SUM(CASE WHEN activityTypeValue = \"change\" AND activityValue = \"wet\" " +
+                "THEN 1 ELSE 0 END) 'wetQty'" +
+            " FROM activity_table " +
+            "WHERE babyId = :babyId " +
+            "GROUP BY activityDate " +
+            "ORDER BY activityDate ASC")
+    LiveData<List<DayActivityTotals>> getDailyActivityTotals( final int babyId );
 
     @Delete
     void delete( Activity Activity );

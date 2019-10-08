@@ -17,13 +17,13 @@ import uk.cjack.babytracker.R;
 import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.enums.ChangeTypeEnum;
-import uk.cjack.babytracker.model.ActivitySummary;
+import uk.cjack.babytracker.model.DayActivitySummary;
 
 public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
 
     private static final int CLEAR_IMAGE = android.R.color.transparent;
     private List<Activity> mActivityList;
-    private List<ActivitySummary> mActivitySummaryList;
+    private List<DayActivitySummary> mDayActivitySummaryList;
     private String mActivityDate;
     private Context mContext;
 
@@ -60,8 +60,8 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
             mActivityDate = activity.getActivityDate();
             viewHolder.activityDateTextView.setText( activity.getActivityDate() );
 
-            if ( mActivitySummaryList != null ) {
-                mActivitySummaryList.stream()
+            if ( mDayActivitySummaryList != null ) {
+                mDayActivitySummaryList.stream()
                         .filter( activitySummary -> (
                                 mActivityDate.equals( activitySummary.getGroupValue() ) ) )
                         .findAny()
@@ -139,13 +139,13 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         return mActivityList;
     }
 
-    public void setActivitySummaryList( final List<ActivitySummary> activitySummaryList ) {
-        mActivitySummaryList = activitySummaryList;
+    public void setActivitySummaryList( final List<DayActivitySummary> dayActivitySummaryList ) {
+        mDayActivitySummaryList = dayActivitySummaryList;
         notifyDataSetChanged();
     }
 
-    public List<ActivitySummary> getActivitySummaryList() {
-        return mActivitySummaryList;
+    public List<DayActivitySummary> getActivitySummaryList() {
+        return mDayActivitySummaryList;
     }
 
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
@@ -168,7 +168,7 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
             itemView.setOnCreateContextMenuListener( this );
 
             activityDateTextView = itemView.findViewById( R.id.activityDate );
-            activityTimeTextView = itemView.findViewById( R.id.activityTime );
+            activityTimeTextView = itemView.findViewById( R.id.daily_date );
             activityValueTextView = itemView.findViewById( R.id.activityValue );
             activitySummaryTextView = itemView.findViewById( R.id.activitySummary );
             activityIconTextView = itemView.findViewById( R.id.activityIcon );

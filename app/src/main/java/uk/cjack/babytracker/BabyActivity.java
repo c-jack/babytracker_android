@@ -28,7 +28,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-import uk.cjack.babytracker.adapters.ActivityAdapter;
+import uk.cjack.babytracker.adapters.ActivityDayAdapter;
 import uk.cjack.babytracker.database.entities.Activity;
 import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.enums.ActivityEnum;
@@ -50,7 +50,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     public static final String TITLE = "%s's Activity";
 
     private RecyclerView mActivityListView;
-    private ActivityAdapter mActivityAdapter;
+    private ActivityDayAdapter mActivityDayAdapter;
     private Baby mSelectedBaby;
     private TextView dateField;
     private TextView feedDaySelect;
@@ -86,16 +86,16 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         }
 
         mActivityViewModel = ViewModelProviders.of( this,
-                new ActivityViewModelFactory( this.getApplication(), selectedBaby ) ).get( ActivityViewModel.class );
+                new ActivityViewModelFactory( this.getApplication(), selectedBaby, "" ) ).get( ActivityViewModel.class );
 
         mActivityViewModel.getAllActivitiesForBaby().observe( this,
-                activityList -> mActivityAdapter.setActivityList( activityList ) );
+                activityList -> mActivityDayAdapter.setActivityList( activityList ) );
 
         mActivityViewModel.getDailyFeedTotals().observe( this,
-                activitySummaryList -> mActivityAdapter.setActivitySummaryList( activitySummaryList ) );
+                activitySummaryTotals -> mActivityDayAdapter.setDayActivityList( activitySummaryTotals ) );
 
-        mActivityAdapter = new ActivityAdapter( this );
-        mActivityListView.setAdapter( mActivityAdapter );
+        mActivityDayAdapter = new ActivityDayAdapter( this );
+        mActivityListView.setAdapter( mActivityDayAdapter );
         mActivityListView.setLayoutManager( new LinearLayoutManager( this ) );
 
         // Add SpeedView items
@@ -135,7 +135,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
 
         if ( item != null ) {
             final Activity thisActivity =
-                    mActivityAdapter.getActivityList().stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
+                    mActivityDayAdapter.getActivityList().stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
 
             if ( thisActivity != null ) {
                 activityToAdd = ActivityEnum.getEnum( thisActivity.getActivityTypeValue() );
@@ -403,7 +403,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     private void saveActivity( final long activityId ) {
 
         final Activity editedActivity =
-                mActivityAdapter.getActivityList().stream().filter(
+                mActivityDayAdapter.getActivityList().stream().filter(
                         activity -> ( activityId == activity.getActivityId() ) )
                         .findAny().orElse( null );
 
@@ -485,7 +485,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
      */
     private DialogInterface.OnClickListener deleteActivity( final MenuItem menuItem ) {
         // Delete the activity object if found
-        return ( dialog, whichButton ) -> mActivityAdapter.getActivityList().stream().filter(
+        return ( dialog, whichButton ) -> mActivityDayAdapter.getActivityList().stream().filter(
                 activity -> ( menuItem.getItemId() == activity.getActivityId() ) )
                 .findAny().ifPresent( activityToDelete -> mActivityViewModel.delete( activityToDelete ) );
     }
