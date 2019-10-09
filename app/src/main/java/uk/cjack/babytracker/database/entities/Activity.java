@@ -1,6 +1,7 @@
 package uk.cjack.babytracker.database.entities;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
@@ -27,21 +28,6 @@ import static uk.cjack.babytracker.utils.DateTimeUtils.getTimeFromDate;
                 childColumns = BABY_TABLE_PK,
                 onDelete = CASCADE ) )
 public class Activity implements Serializable, Comparable<Activity> {
-
-    public Activity( @NonNull final Baby baby,
-                     @NonNull final ActivityEnum activity,
-                     @NonNull final Date activityDateTime,
-                     @NonNull final String activityValue ) {
-        this.activityId = 0;
-        this.baby = baby;
-        this.babyId = baby.getBabyId();
-        this.activityType = activity;
-        this.activityTypeValue = activity.getName();
-        this.activityDateTime = activityDateTime;
-        this.activityValue = activityValue;
-
-        setActivityDateTimeValues();
-    }
 
     @PrimaryKey( autoGenerate = true )
     private int activityId;
@@ -70,6 +56,21 @@ public class Activity implements Serializable, Comparable<Activity> {
      * Default empty constructor as required by the compiler
      */
     public Activity() {
+    }
+
+    public Activity( @NonNull final Baby baby,
+                     @NonNull final ActivityEnum activity,
+                     @NonNull final Date activityDateTime,
+                     @NonNull final String activityValue ) {
+        this.activityId = 0;
+        this.baby = baby;
+        this.babyId = baby.getBabyId();
+        this.activityType = activity;
+        this.activityTypeValue = activity.getName();
+        this.activityDateTime = activityDateTime;
+        this.activityValue = activityValue;
+
+        setActivityDateTimeValues();
     }
 
 

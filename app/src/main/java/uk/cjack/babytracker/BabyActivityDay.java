@@ -35,7 +35,10 @@ import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.enums.ChangeTypeEnum;
 import uk.cjack.babytracker.model.ActivityViewModelFactory;
+import uk.cjack.babytracker.model.BabyViewModelFactory;
+import uk.cjack.babytracker.model.DayActivityTotals;
 import uk.cjack.babytracker.view.ActivityViewModel;
+import uk.cjack.babytracker.view.BabyViewModel;
 
 import static android.content.DialogInterface.BUTTON_NEGATIVE;
 import static android.content.DialogInterface.BUTTON_POSITIVE;
@@ -47,12 +50,11 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
         DatePickerDialog.OnDateSetListener,
         TimePickerDialog.OnTimeSetListener {
 
-    public static final String SELECTED_BABY = "uk.cjack.babytracker.selected_baby";
-    public static final String TITLE = "%s's Activity";
+    public static final String SELECTED_DAY_ACTIVITY = "uk.cjack.babytracker.selected_dayactivity";
 
     private RecyclerView mActivityListView;
-    private ActivityDayAdapter mActivityDayAdapter;
-    private String date;
+    private ActivityAdapter mActivityAdapter;
+    private DayActivityTotals mSelectedActivity;
     private Baby mSelectedBaby;
     private TextView dateField;
     private TextView feedDaySelect;
@@ -66,6 +68,7 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
     private ActivityEnum activityToAdd;
     private AlertDialog mDialog;
     private ActivityViewModel mActivityViewModel;
+    private BabyViewModel mBabyViewModel;
 
     private DatePickerDialog datePickerDialog;
     private TimePickerDialog timePickerDialog;
@@ -76,32 +79,40 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_screen );
 
-        // Get ListView
-        mActivityListView = findViewById( R.id.feedListView );
-
-        final String filterDate = "";
-
         final TextView selectedBabyNameText = findViewById( R.id.selectedBabyName );
 
-        final Baby selectedBaby = ( Baby ) getIntent().getSerializableExtra( SELECTED_BABY );
-        if ( selectedBaby != null ) {
-            mSelectedBaby = selectedBaby;
-            selectedBabyNameText.setText( String.format( TITLE, mSelectedBaby.getBabyName() ) );
+        final DayActivityTotals selectedActivity = ( DayActivityTotals ) getIntent().getSerializableExtra( SELECTED_DAY_ACTIVITY );
+
+        if ( selectedActivity != null ) {
+            mSelectedActivity = selectedActivity;
+            final int babyId = selectedActivity.getBabyId();
+
+            // Get ListView
+            mActivityListView = findViewById( R.id.feedListView );
+            mBabyViewModel = ViewModelProviders.of( this,
+                    new BabyViewModelFactory( this.getApplication() ) ).get( BabyViewModel.class );
+
+            mSelectedBaby = mBabyViewModel.getBaby( babyId );
+
+            selectedBabyNameText.setText( mSelectedActivity.getActivityDate() );
+
+
+            final String filterDate = selectedActivity.getActivityDate();
+
+            mActivityViewModel = ViewModelProviders.of( this,
+                    new ActivityViewModelFactory( this.getApplication(), mSelectedBaby, filterDate ) ).get( ActivityViewModel.class );
+
+            mActivityViewModel.getAllActivitiesForBabyByDate().observe( this,
+                    activityList -> mActivityAdapter.setActivityList( activityList ) );
+
+            mActivityAdapter = new ActivityAdapter( this, mSelectedBaby );
+            mActivityListView.setAdapter( mActivityAdapter );
+            mActivityListView.setLayoutManager( new LinearLayoutManager( this ) );
+
+            // Add SpeedView items
+            final SpeedDialView speedDialView = addSpeedViewItems();
+            speedDialView.setOnActionSelectedListener( speedViewOnSelect() );
         }
-
-        mActivityViewModel = ViewModelProviders.of( this,
-                new ActivityViewModelFactory( this.getApplication(), selectedBaby, filterDate ) ).get( ActivityViewModel.class );
-
-        mActivityViewModel.getDailyFeedTotals().observe( this,
-                dailyFeedTotals -> mActivityDayAdapter.setDayActivityList( dailyFeedTotals ) );
-
-        mActivityDayAdapter = new ActivityDayAdapter( this );
-        mActivityListView.setAdapter( mActivityDayAdapter );
-        mActivityListView.setLayoutManager( new LinearLayoutManager( this ) );
-
-        // Add SpeedView items
-        final SpeedDialView speedDialView = addSpeedViewItems();
-        speedDialView.setOnActionSelectedListener( speedViewOnSelect() );
 
     }
 
@@ -136,7 +147,7 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
 
         if ( item != null ) {
             final Activity thisActivity =
-                    mActivityDayAdapter.getActivityList().stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
+                    mActivityAdapter.getActivityList().stream().filter( activity -> ( item.getItemId() == activity.getActivityId() ) ).findAny().orElse( null );
 
             if ( thisActivity != null ) {
                 activityToAdd = ActivityEnum.getEnum( thisActivity.getActivityTypeValue() );
@@ -406,7 +417,7 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
     private void saveActivity( final long activityId ) {
 
         final Activity editedActivity =
-                mActivityDayAdapter.getActivityList().stream().filter(
+                mActivityAdapter.getActivityList().stream().filter(
                         activity -> ( activityId == activity.getActivityId() ) )
                         .findAny().orElse( null );
 
@@ -488,7 +499,7 @@ public class BabyActivityDay extends BaseActivity implements AlertDialog.OnClick
      */
     private DialogInterface.OnClickListener deleteActivity( final MenuItem menuItem ) {
         // Delete the activity object if found
-        return ( dialog, whichButton ) -> mActivityDayAdapter.getActivityList().stream().filter(
+        return ( dialog, whichButton ) -> mActivityAdapter.getActivityList().stream().filter(
                 activity -> ( menuItem.getItemId() == activity.getActivityId() ) )
                 .findAny().ifPresent( activityToDelete -> mActivityViewModel.delete( activityToDelete ) );
     }

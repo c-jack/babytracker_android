@@ -1,6 +1,7 @@
 package uk.cjack.babytracker.view;
 
 import android.app.Application;
+import android.os.AsyncTask;
 
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
@@ -16,15 +17,28 @@ public class BabyViewModel extends AndroidViewModel {
     private final LiveData<List<Baby>> mAllBabies;
 
 
-    public BabyViewModel ( final Application application) {
-        super(application);
-        mBabyRepository = new BabyRepository(application);
+    public BabyViewModel( final Application application ) {
+        super( application );
+        mBabyRepository = new BabyRepository( application );
         mAllBabies = mBabyRepository.getAllBabies();
     }
+    public LiveData<List<Baby>> getAllBabies() {
+        return mAllBabies;
+    }
 
-    public LiveData<List<Baby>> getAllBabies() { return mAllBabies; }
+    public Baby getBaby( final int babyId) {
+        return mBabyRepository.getBaby( babyId );
+    }
 
-    public void insert(final Baby baby) { mBabyRepository.insert(baby); }
-    public void delete(final Baby baby) { mBabyRepository.delete(baby); }
-    public void update(final Baby baby) { mBabyRepository.update(baby); }
+    public void insert( final Baby baby ) {
+        mBabyRepository.insert( baby );
+    }
+
+    public void delete( final Baby baby ) {
+        mBabyRepository.delete( baby );
+    }
+
+    public void update( final Baby baby ) {
+        mBabyRepository.update( baby );
+    }
 }

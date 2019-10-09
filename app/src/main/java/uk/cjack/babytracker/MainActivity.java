@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProviders;
@@ -19,6 +18,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import uk.cjack.babytracker.adapters.BabyListAdapter;
 import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.view.BabyViewModel;
+
+import static uk.cjack.babytracker.utils.Utils.makeToast;
 
 
 public class MainActivity extends BaseActivity implements BabyListAdapter.OnItemClicked {
@@ -70,14 +71,6 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
         startActivity( intent );
     }
 
-    /**
-     * Toast sample
-     *
-     * @param msg message to display in the toast
-     */
-    private void makeToast( final String msg ) {
-        Toast.makeText( MainActivity.this, msg, Toast.LENGTH_SHORT ).show();
-    }
 
 
     /**
@@ -131,20 +124,9 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
 
             mBabyViewModel.delete( selectedBaby );
 
-            Toast.makeText( MainActivity.this, "Deleted", Toast.LENGTH_SHORT ).show();
+            makeToast( this, "Deleted" );
 
         };
-    }
-
-    /**
-     * Alert sample
-     */
-    private void showAlert() {
-        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder( MainActivity.this );
-        alertDialogBuilder
-                .setMessage( "Test" );
-        final AlertDialog alertDialog = alertDialogBuilder.create();
-        alertDialog.show();
     }
 
     @Override
@@ -201,27 +183,9 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
 
             final String msg = String.format( getString( R.string.baby_created_msg ),
                     babyName );
-            makeToast( msg );
+            makeToast( this, msg );
         };
     }
-
-
-//    @Override
-//    public void onCreateContextMenu( final ContextMenu menu, final View v,
-//                                     final ContextMenu.ContextMenuInfo menuInfo ) {
-//        if ( v.getId() == R.id.baby_name_list_view ) {
-//            final AdapterView.AdapterContextMenuInfo adapterContextMenuInfo =
-//                    ( AdapterView.AdapterContextMenuInfo ) menuInfo;
-////            final String babyName =
-////                    mBabyNameList.get( adapterContextMenuInfo.position ).getBabyName();
-//
-//            menu.setHeaderIcon( R.drawable.baby );
-////            menu.setHeaderTitle( babyName );
-//            final int id = Math.toIntExact( adapterContextMenuInfo.id );
-//            menu.add( 0, id, 0, "Edit" );
-//            menu.add( 0, id, 0, "Delete" );
-//        }
-//    }
 
     /**
      * Add new baby
@@ -253,7 +217,7 @@ public class MainActivity extends BaseActivity implements BabyListAdapter.OnItem
 
             final String msg = String.format( getString( R.string.baby_created_msg ),
                     babyName );
-            makeToast( msg );
+            makeToast( this, msg );
         };
     }
 }

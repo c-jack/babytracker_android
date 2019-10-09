@@ -2,9 +2,14 @@ package uk.cjack.babytracker.model;
 
 import androidx.room.ColumnInfo;
 
-public class DayActivityTotals {
+import java.io.Serializable;
+
+public class DayActivityTotals implements Serializable {
     @ColumnInfo( name = "date" )
     private String activityDate;
+
+    @ColumnInfo( name = "babyId" )
+    private int babyId;
 
     @ColumnInfo( name = "feedQty" )
     private String feedTotal;
@@ -46,6 +51,14 @@ public class DayActivityTotals {
 
     public void setWetNappies( final String wetNappies ) {
         this.wetNappies = wetNappies;
+    }
+
+    public int getBabyId() {
+        return babyId;
+    }
+
+    public void setBabyId( final int babyId ) {
+        this.babyId = babyId;
     }
 }
 

@@ -26,6 +26,9 @@
         <activity
             android:name=".BabyActivity"
             android:label="@string/app_name" />
+        <activity
+            android:name=".BabyActivityDay"
+            android:label="@string/app_name" />
     </application>
 
 </manifest>

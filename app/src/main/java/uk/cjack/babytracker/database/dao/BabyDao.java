@@ -17,6 +17,9 @@ public interface BabyDao {
     @Insert
     void insert( Baby baby);
 
+    @Query("SELECT * FROM baby_table WHERE babyId = :babyId")
+    Baby getBaby( final int babyId);
+
     @Query("DELETE FROM baby_table")
     void deleteAll();
 

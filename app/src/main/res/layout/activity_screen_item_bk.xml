@@ -5,14 +5,12 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="10dp">
+    android:padding="5dp">
 
     <View
         android:id="@+id/floatingcontainer"
         android:layout_width="wrap_content"
         android:layout_height="30dp"
-        android:layout_margin="10dp"
-        android:layout_marginTop="44dp"
         android:background="@drawable/rounded_rec_item"
         android:orientation="vertical"
         android:padding="5dp"
@@ -26,28 +24,31 @@
         android:id="@+id/changeIcon"
         android:layout_width="20dp"
         android:layout_height="20dp"
+        android:elevation="20dp"
         app:layout_constraintEnd_toEndOf="@+id/daily_change_qty"
         app:layout_constraintStart_toStartOf="@+id/daily_change_qty"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/nappy" />
+        app:srcCompat="@drawable/nappy_circle" />
 
     <TextView
         android:id="@+id/daily_change_qty"
         android:layout_width="50dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:gravity="center"
         android:text="1000ml"
-        android:textSize="12sp"
+        android:textSize="10sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/daily_feed_amnt"
-        app:layout_constraintTop_toBottomOf="@+id/feedIcon"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toBottomOf="@+id/changeIcon" />
 
     <TextView
         android:id="@+id/daily_date"
         android:layout_width="0dp"
-        android:layout_height="28dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:gravity="clip_horizontal|clip_vertical|center_vertical"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -60,19 +61,21 @@
         android:id="@+id/feedIcon"
         android:layout_width="20dp"
         android:layout_height="20dp"
+        android:elevation="20dp"
         app:layout_constraintEnd_toEndOf="@+id/daily_feed_amnt"
         app:layout_constraintStart_toStartOf="@+id/daily_feed_amnt"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/feed" />
+        app:srcCompat="@drawable/bottle_circle_small" />
 
     <TextView
         android:id="@+id/daily_feed_amnt"
         android:layout_width="50dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
         android:gravity="center"
         android:text="1000ml"
-        android:textSize="12sp"
+        android:textSize="10sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/feedIcon" />

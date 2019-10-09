@@ -14,11 +14,13 @@ import java.util.List;
 
 import uk.cjack.babytracker.R;
 import uk.cjack.babytracker.database.entities.Activity;
+import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.model.DayActivityTotals;
 
 public class ActivityDayAdapter extends RecyclerView.Adapter<ActivityDayAdapter.ViewHolder> {
 
+    private OnItemClicked onClick;
     private List<Activity> mActivityList;
     private List<DayActivityTotals> mDayActivityTotalList;
     private Context mContext;
@@ -47,15 +49,18 @@ public class ActivityDayAdapter extends RecyclerView.Adapter<ActivityDayAdapter.
 
     // Involves populating data into the item through holder
     @Override
-    public void onBindViewHolder( @NonNull final ActivityDayAdapter.ViewHolder viewHolder,
+    public void onBindViewHolder( @NonNull final ActivityDayAdapter.ViewHolder holder,
                                   final int position ) {
         // Get the data model based on position
         final DayActivityTotals activity = mDayActivityTotalList.get( position );
 
         // Set item views based on your views and data model
-        final TextView activityFeedAmountTextView = viewHolder.activityFeedAmountTextView;
-        final TextView activityDateTextView = viewHolder.activityDateTextView;
-        final TextView activityChangeQtyTextView = viewHolder.activityChangeQtyTextView;
+        final TextView activityFeedAmountTextView = holder.activityFeedAmountTextView;
+        final TextView activityDateTextView = holder.activityDateTextView;
+        final TextView activityChangeQtyTextView = holder.activityChangeQtyTextView;
+
+        holder.activityDateTextView.setOnClickListener( v -> onClick.onItemClick( position,
+                activity ) );
 
         activityDateTextView.setText( activity.getActivityDate() );
         activityFeedAmountTextView.setText( String.format( "%s%s", activity.getFeedTotal(),
@@ -129,5 +134,13 @@ public class ActivityDayAdapter extends RecyclerView.Adapter<ActivityDayAdapter.
             // title
             menu.add( 0, selectedActivity.getActivityId(), 0, "Delete" );
         }
+    }
+
+    public interface OnItemClicked {
+        void onItemClick( int position, final DayActivityTotals current );
+    }
+
+    public void setOnClick( final OnItemClicked onClick ) {
+        this.onClick = onClick;
     }
 }

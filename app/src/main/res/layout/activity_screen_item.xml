@@ -3,88 +3,66 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="100dp"
-    android:layout_marginTop="10dp"
-    android:background="#fff"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="35dp"
     android:elevation="10dp"
     android:orientation="vertical">
 
     <TextView
         android:id="@+id/activityValue"
-        android:layout_width="0dp"
-        android:layout_height="28dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="4dp"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
         android:gravity="clip_vertical|right|center_vertical"
         android:maxLines="1"
+        android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/nappyChangeTypeIcon"
-        app:layout_constraintStart_toEndOf="@+id/daily_date" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/daily_date" />
 
     <TextView
         android:id="@+id/daily_date"
         android:layout_width="wrap_content"
-        android:layout_height="28dp"
-        android:layout_marginBottom="4dp"
+        android:layout_height="0dp"
         android:gravity="clip_horizontal|clip_vertical|center_vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/activityDate"
-        android:layout_width="0dp"
-        android:layout_height="28dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="5dp"
-        android:gravity="clip_horizontal|center_vertical"
-        android:textSize="14sp"
+        android:textSize="10sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/daily_date"
-        app:layout_constraintEnd_toStartOf="@+id/feedIcon"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/activityIcon" />
 
-    <TextView
-        android:id="@+id/activitySummary"
+    <View
         android:layout_width="100dp"
-        android:layout_height="26dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginBottom="8dp"
-        android:gravity="clip_horizontal|center_vertical"
-        android:textSize="14sp"
-        app:layout_constraintBottom_toTopOf="@+id/activityValue"
-        app:layout_constraintStart_toEndOf="@+id/feedIcon" />
+        android:layout_height="1dp"
+        android:background="@drawable/gradient_line"
+        app:layout_constraintBottom_toBottomOf="@+id/nappyChangeTypeIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/nappyChangeTypeIcon" />
 
     <ImageView
         android:id="@+id/activityIcon"
-        android:layout_width="15dp"
-        android:layout_height="15dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="4dp"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:background="@drawable/icon_circle_bg"
+        android:padding="3dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/daily_date"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
         app:srcCompat="@android:drawable/btn_star" />
 
     <ImageView
         android:id="@+id/nappyChangeTypeIcon"
-        android:layout_width="15dp"
-        android:layout_height="15dp"
-        android:layout_marginEnd="40dp"
-        android:layout_marginBottom="4dp"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/activityValue"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/activityIcon"
+        app:layout_constraintEnd_toEndOf="@+id/activityIcon"
+        app:layout_constraintStart_toStartOf="@+id/activityIcon"
+        app:layout_constraintTop_toTopOf="@+id/activityIcon"
         app:srcCompat="@android:drawable/btn_star" />
-
-    <ImageView
-        android:id="@+id/feedIcon"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_marginBottom="9dp"
-        app:layout_constraintBottom_toTopOf="@+id/activityValue"
-        app:srcCompat="@drawable/feed_lg"
-        tools:layout_editor_absoluteX="296dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

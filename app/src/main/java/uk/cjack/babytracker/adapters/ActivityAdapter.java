@@ -15,6 +15,7 @@ import java.util.List;
 
 import uk.cjack.babytracker.R;
 import uk.cjack.babytracker.database.entities.Activity;
+import uk.cjack.babytracker.database.entities.Baby;
 import uk.cjack.babytracker.enums.ActivityEnum;
 import uk.cjack.babytracker.enums.ChangeTypeEnum;
 import uk.cjack.babytracker.model.DayActivitySummary;
@@ -22,13 +23,14 @@ import uk.cjack.babytracker.model.DayActivitySummary;
 public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
 
     private static final int CLEAR_IMAGE = android.R.color.transparent;
+    private String mBabyName;
     private List<Activity> mActivityList;
     private List<DayActivitySummary> mDayActivitySummaryList;
-    private String mActivityDate;
     private Context mContext;
 
-    public ActivityAdapter( final Context context ) {
+    public ActivityAdapter( final Context context, final Baby baby ) {
         this.mContext = context;
+        this.mBabyName = baby.getBabyName();
     }
 
 
@@ -41,7 +43,8 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         final LayoutInflater inflater = LayoutInflater.from( context );
 
         // Inflate the custom layout
-        final View feed_item_view = inflater.inflate( R.layout.activity_screen_item, parent, false );
+        final View feed_item_view = inflater.inflate( R.layout.activity_screen_item, parent,
+                false );
 
         // Return a new holder instance
         return new ViewHolder( feed_item_view );
@@ -55,26 +58,6 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         // Get the data model based on position
         final Activity activity = mActivityList.get( position );
         final ViewGroup.LayoutParams lp = viewHolder.itemView.getLayoutParams();
-
-        if ( !activity.getActivityDate().equals( mActivityDate ) ) {
-            mActivityDate = activity.getActivityDate();
-            viewHolder.activityDateTextView.setText( activity.getActivityDate() );
-
-            if ( mDayActivitySummaryList != null ) {
-                mDayActivitySummaryList.stream()
-                        .filter( activitySummary -> (
-                                mActivityDate.equals( activitySummary.getGroupValue() ) ) )
-                        .findAny()
-                        .ifPresent( summary ->
-                                viewHolder.activitySummaryTextView
-                                        .setText( summary.getResultValue() ) );
-            }
-            lp.height =
-                    ( int ) mContext.getResources().getDimension( R.dimen.activity_height_with_date );
-        }
-        else {
-            lp.height = ( int ) mContext.getResources().getDimension( R.dimen.activity_height );
-        }
 
         // Set item views based on your views and data model
         final TextView activityValueTextView = viewHolder.activityValueTextView;
@@ -91,18 +74,29 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         final int drawableActivityIcon;
         int changeValueIcon = CLEAR_IMAGE;
         if ( activityType != null ) {
-            drawableActivityIcon = activityType.config().getResourceImage();
             switch ( activityType ) {
                 case FEED:
-                    final String feedAmount = activity.getActivityValue() + activityType.getUnit();
-                    activityValueTextView.setText( feedAmount );
+                    drawableActivityIcon = activityType.config().getResourceImage();
+                    activityValueTextView.setText(
+                            String.format( mContext.getString( R.string.baby_feed_value_msg ),
+                                    mBabyName,
+                                    activity.getActivityValue(),
+                                    activityType.getUnit() ) );
                     break;
                 case CHANGE:
+                    drawableActivityIcon = CLEAR_IMAGE;
                     final ChangeTypeEnum changeTypeEnum =
                             ChangeTypeEnum.getEnum( activity.getActivityValue() );
                     if ( changeTypeEnum != null ) {
                         changeValueIcon = changeTypeEnum.getConfig().getResourceImage();
+                        activityValueTextView.setText(
+                                String.format( mContext.getString( R.string.baby_change_value_msg ),
+                                        mBabyName,
+                                        changeTypeEnum.getDescription() ) );
                     }
+                    break;
+                default:
+                    drawableActivityIcon = R.drawable.unknown;
                     break;
             }
         }
@@ -113,7 +107,9 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         nappyChangeTypeIcon.setImageResource( changeValueIcon );
         nappyChangeTypeIcon.setVisibility( View.VISIBLE );
 
-        activityIcon.setImageResource( drawableActivityIcon );
+        if ( drawableActivityIcon != CLEAR_IMAGE ) {
+            activityIcon.setImageResource( drawableActivityIcon );
+        }
         activityTimeTextView.setText( activity.getActivityTime() );
 
     }
@@ -151,10 +147,8 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
         // Your holder should contain a member variable
         // for any view that will be set as you render a row
-        TextView activityDateTextView;
         TextView activityTimeTextView;
         TextView activityValueTextView;
-        TextView activitySummaryTextView;
         ImageView activityIconTextView;
         ImageView nappyChangeIcon;
 
@@ -167,10 +161,8 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
 
             itemView.setOnCreateContextMenuListener( this );
 
-            activityDateTextView = itemView.findViewById( R.id.activityDate );
             activityTimeTextView = itemView.findViewById( R.id.daily_date );
             activityValueTextView = itemView.findViewById( R.id.activityValue );
-            activitySummaryTextView = itemView.findViewById( R.id.activitySummary );
             activityIconTextView = itemView.findViewById( R.id.activityIcon );
             nappyChangeIcon = itemView.findViewById( R.id.nappyChangeTypeIcon );
 

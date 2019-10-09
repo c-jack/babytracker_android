@@ -1,6 +1,9 @@
 package uk.cjack.babytracker.database.repository;
 
 import android.os.AsyncTask;
+import android.widget.Toast;
+
+import androidx.room.Room;
 
 import uk.cjack.babytracker.database.dao.ActivityDao;
 import uk.cjack.babytracker.database.dao.BabyDao;
@@ -11,7 +14,7 @@ import uk.cjack.babytracker.database.enums.DatabaseActionEnum;
 /**
  * Async task class
  */
-public class BabyAsyncTask extends AsyncTask<Object, Void, Void> {
+public class BabyAsyncTask extends AsyncTask<Object, Void, Object> {
 
     private final BabyDao mBabyDao;
     private final ActivityDao mActivityDao;
@@ -35,7 +38,7 @@ public class BabyAsyncTask extends AsyncTask<Object, Void, Void> {
      * @return
      */
     @Override
-    protected Void doInBackground( final Object... params ) {
+    protected Object doInBackground( final Object... params ) {
         switch ( mAction ) {
             case INSERT:
                 if ( params[0] instanceof Activity && mActivityDao != null ) {
@@ -61,7 +64,28 @@ public class BabyAsyncTask extends AsyncTask<Object, Void, Void> {
                     mBabyDao.delete( ( Baby ) params[0] );
                 }
                 break;
+            case GET:
+                if ( params[0] instanceof Integer && mBabyDao != null ) {
+                    return mBabyDao.getBaby( ( int ) params[0] );
+                }
         }
         return null;
     }
+//
+//
+//    public static class GetBabyAsyncTask extends AsyncTask<Integer, Void, Baby> {
+//
+//        private final BabyDao mBabyDao;
+//
+//        GetBabyAsyncTask( final BabyDao babyDao ) {
+//            mBabyDao = babyDao;
+//        }
+//
+//        @Override
+//        protected Baby doInBackground( final Integer... babyId ) {
+//            return mBabyDao.getBaby( babyId[0] );
+//        }
+//
+//    }
+
 }

@@ -49,6 +49,7 @@ public interface ActivityDao {
 
     @Query( "SELECT " +
             "activityDate 'date', " +
+            "babyId, " +
             "SUM(CASE WHEN activityTypeValue = \"feed\" " +
                 "THEN activityValue ELSE 0 END) 'feedQty', " +
             "SUM(CASE WHEN activityTypeValue = \"change\" AND activityValue = \"soiled\" " +

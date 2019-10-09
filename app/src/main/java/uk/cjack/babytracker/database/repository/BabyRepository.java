@@ -5,6 +5,7 @@ import android.app.Application;
 import androidx.lifecycle.LiveData;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import uk.cjack.babytracker.database.BabyTrackerDatabase;
 import uk.cjack.babytracker.database.dao.BabyDao;
@@ -25,6 +26,19 @@ public class BabyRepository {
         final BabyTrackerDatabase db = BabyTrackerDatabase.getDatabase( application );
         mBabyDao = db.babyDao();
         mAllBabies = mBabyDao.getAllBabies();
+    }
+
+    /*
+     * Returns a specific baby
+     */
+    public Baby getBaby( final int babyId) {
+        try {
+            return (Baby) new BabyAsyncTask( mBabyDao, DatabaseActionEnum.GET ).execute( babyId ).get();
+        }
+        catch ( ExecutionException | InterruptedException e ) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
@@ -60,5 +74,4 @@ public class BabyRepository {
     public void delete( final Baby baby ) {
         new BabyAsyncTask( mBabyDao, DatabaseActionEnum.DELETE ).execute( baby );
     }
-
 }

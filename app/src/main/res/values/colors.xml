@@ -4,7 +4,10 @@
     <color name="colorPrimaryDark">#555</color>
     <color name="colorAccent">#0288D1</color>
     <color name="darkTint">#22000000</color>
+    <color name="background">#fafafa</color>
 
+    <color name="gradientlinestartend">#ffffff</color>
+    <color name="gradientlinemiddle">@android:color/darker_gray</color>
 
     <color name="sa_green">#1E9618</color>
     <color name="sa_gray">#CCCCCC</color>

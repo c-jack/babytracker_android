@@ -5,8 +5,8 @@ import java.util.Objects;
 import uk.cjack.babytracker.R;
 
 public enum ActivityEnum {
-    CHANGE( new ActivityConfig( "change", null, R.drawable.nappy ) ),
-    FEED( new ActivityConfig( "feed", "ml", R.drawable.feed ) );
+    CHANGE( new ActivityConfig( "change", null, R.drawable.grey_nappy ) ),
+    FEED( new ActivityConfig( "feed", "ml", R.drawable.grey_baby_bottle ) );
 
     private final ActivityConfig config;
 
