@@ -153,6 +153,7 @@ public class Activity implements Serializable, Comparable<Activity> {
 
     public void setActivityDateTime( @NonNull final Date activityDateTime ) {
         this.activityDateTime = activityDateTime;
+        setActivityDateTimeValues();
     }
 
     public void setActivityDate( final String activityDate ) {

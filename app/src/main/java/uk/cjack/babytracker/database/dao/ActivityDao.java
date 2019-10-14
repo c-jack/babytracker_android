@@ -59,7 +59,7 @@ public interface ActivityDao {
             " FROM activity_table " +
             "WHERE babyId = :babyId " +
             "GROUP BY activityDate " +
-            "ORDER BY activityDate ASC")
+            "ORDER BY activityDateTime DESC")
     LiveData<List<DayActivityTotals>> getDailyActivityTotals( final int babyId );
 
     @Delete
