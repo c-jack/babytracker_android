@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -64,6 +65,8 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
     private TextView activityValueUnitField;
     private ImageView activityIcon;
     private RadioGroup nappyChangeTypeGroup;
+    private CheckBox wetNappyCheckbox;
+    private CheckBox soiledNappyCheckbox;
     private ActivityEnum activityToAdd;
     private AlertDialog mDialog;
     private ActivityViewModel mActivityViewModel;
@@ -127,7 +130,6 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         long millisTimeValue = now.getTime();
         final Calendar initialTime = Calendar.getInstance();
         String activityValue = null;
-
 
         if ( item != null ) {
             final Activity thisActivity =
@@ -220,38 +222,50 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
 
         mDialog = dialog;
 
-        /*
-         * Set the fields in the pop-up dialog
-         */
-        dateField = dialog.findViewById( R.id.activityDate );
-        timeField = dialog.findViewById( R.id.activityTimeSelect );
-        feedDaySelect = dialog.findViewById( R.id.activityDaySelect );
-        activityValueField = dialog.findViewById( R.id.activityValue );
-        activityIdField = dialog.findViewById( R.id.activityDbId );
-        activityTitleField = dialog.findViewById( R.id.activityTitle );
-        activityIcon = dialog.findViewById( R.id.activityIcon );
-        nappyChangeTypeGroup = dialog.findViewById( R.id.nappyChangeTypeGroup );
-        activityValueUnitField = dialog.findViewById( R.id.activityValueUnit );
+            /*
+             * Set the fields in the pop-up dialog
+             */
+            dateField = dialog.findViewById( R.id.activityDate );
+            timeField = dialog.findViewById( R.id.activityTimeSelect );
+            feedDaySelect = dialog.findViewById( R.id.activityDaySelect );
+            activityValueField = dialog.findViewById( R.id.activityValue );
+            activityIdField = dialog.findViewById( R.id.activityDbId );
+            activityTitleField = dialog.findViewById( R.id.activityTitle );
+            activityIcon = dialog.findViewById( R.id.activityIcon );
+            nappyChangeTypeGroup = dialog.findViewById( R.id.nappyChangeTypeGroup );
+            wetNappyCheckbox = dialog.findViewById( R.id.rb_wetNappy );
+            soiledNappyCheckbox = dialog.findViewById( R.id.rb_soiledNappy );
+            activityValueUnitField = dialog.findViewById( R.id.activityValueUnit );
 
-        /*
-         * Set the values based on either now, or the existing values
-         */
-        setActivityId( activityDbId );
-        setDayField( millisTimeValue );
-        setTimeField( millisTimeValue );
-        dateField.setText( String.valueOf( millisTimeValue ) );
-        activityValueField.setText( activityValue );
-        activityTitleField.setText( getString( title ) );
-        activityIcon.setImageResource( activityIconId );
-        nappyChangeTypeGroup.setVisibility( nappyChangeTypeGroupVisibility );
-        activityValueField.setVisibility( activityValueVisibility );
-        activityValueUnitField.setText( activityValueUnitText );
-        if ( changeTypeEnum != null ) {
-            nappyChangeTypeGroup.clearCheck();
-            final ChangeTypeEnum.ChangeConfig config = changeTypeEnum.getConfig();
-            final RadioButton selectedRadioButton = dialog.findViewById( config.getRadioButtonId() );
-            selectedRadioButton.setChecked( true );
-        }
+            /*
+             * Set the values based on either now, or the existing values
+             */
+            setActivityId( activityDbId );
+            setDayField( millisTimeValue );
+            setTimeField( millisTimeValue );
+            dateField.setText( String.valueOf( millisTimeValue ) );
+            activityValueField.setText( activityValue );
+            activityTitleField.setText( getString( title ) );
+            activityIcon.setImageResource( activityIconId );
+            nappyChangeTypeGroup.setVisibility( nappyChangeTypeGroupVisibility );
+            activityValueField.setVisibility( activityValueVisibility );
+            activityValueUnitField.setText( activityValueUnitText );
+            if ( changeTypeEnum != null ) {
+                nappyChangeTypeGroup.clearCheck();
+                final ChangeTypeEnum.ChangeConfig config = changeTypeEnum.getConfig();
+
+                if( changeTypeEnum.equals( ChangeTypeEnum.MIXED ) )
+                {
+                   soiledNappyCheckbox.setChecked( true );
+                   wetNappyCheckbox.setChecked( true );
+                }
+                else {
+                    final CheckBox selectedCheckbox =
+                            dialog.findViewById( config.getRadioButtonId() );
+                    selectedCheckbox.setChecked( true );
+                }
+
+            }
 
         /*
          * Set the listeners for the Date and Time
@@ -407,14 +421,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
             case BUTTON_NEGATIVE:
                 break;
             case BUTTON_POSITIVE:
-                final TextView idField = mDialog.findViewById( R.id.activityDbId );
-                final String idText = idField.getText().toString();
-                if ( idText.length() > 0 ) {
-                    saveActivity( Long.parseLong( idText ) );
-                }
-                else {
-                    saveActivity( 0 );
-                }
+                    saveActivity();
                 break;
         }
         dialog.dismiss();
@@ -431,12 +438,7 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
      *
      * @param activityId the ID of the activity being edited (null, if new).
      */
-    private void saveActivity( final long activityId ) {
-
-//        final Activity editedActivity =
-//                mActivityDayAdapter.getActivitgeyList().stream().filter(
-//                        activity -> ( activityId == activity.getActivityId() ) )
-//                        .findAny().orElse( null );
+    private void saveActivity() {
 
         final String activityDate = dateField.getText().toString();
         final LocalDateTime localDateTime =
@@ -445,46 +447,27 @@ public class BabyActivity extends BaseActivity implements AlertDialog.OnClickLis
         final Date activityDateTime =
                 Date.from( localDateTime.atZone( ZoneId.systemDefault() ).toInstant() );
 
-        final int selectedNappyChangeType = nappyChangeTypeGroup.getCheckedRadioButtonId();
-        final RadioButton selectedType = mDialog.findViewById( selectedNappyChangeType );
-
         final String activityValue;
 
         if ( activityToAdd == ActivityEnum.CHANGE ) {
-            activityValue = selectedType.getTag().toString();
+            if ( wetNappyCheckbox.isChecked() && soiledNappyCheckbox.isChecked() ) {
+                activityValue = "mixed";
+            }
+            else if ( wetNappyCheckbox.isChecked() ) {
+                activityValue = wetNappyCheckbox.getTag().toString();
+            }
+            else if ( soiledNappyCheckbox.isChecked() ) {
+                activityValue = soiledNappyCheckbox.getTag().toString();
+            }
+            else {
+                activityValue = null;
+            }
+
         }
         else {
             activityValue = activityValueField.getText().toString();
 
         }
-//
-//        if ( editedActivity != null ) {
-//
-//            boolean modified = false;
-//
-//            if ( !editedActivity.getActivityDate().equals( activityDate ) ) {
-//                editedActivity.setActivityDateTime( activityDateTime );
-//                modified = true;
-//            }
-//            if ( activityToAdd == ActivityEnum.FEED ) {
-//                if ( !editedActivity.getActivityValue().equals( activityValue ) ) {
-//                    editedActivity.setActivityValue( activityValue );
-//                    modified = true;
-//                }
-//            }
-//            else if ( activityToAdd == ActivityEnum.CHANGE ) {
-//
-//                if ( !editedActivity.getActivityValue().equals( activityValue ) ) {
-//                    editedActivity.setActivityValue( activityValue );
-//                    modified = true;
-//                }
-//
-//            }
-//            if ( modified ) {
-//                mActivityViewModel.update( editedActivity );
-//            }
-//        }
-//        else {
             final Activity newActivity = new Activity( mSelectedBaby, activityToAdd,
                     activityDateTime, activityValue );
 

@@ -9,7 +9,8 @@ import uk.cjack.babytracker.R;
  */
 public enum ChangeTypeEnum {
     WET( new ChangeConfig("wet", R.drawable.wet_yellow_filled, R.id.rb_wetNappy )  ),
-    SOILED( new ChangeConfig( "soiled", R.drawable.poo_brown_fill, R.id.rb_soiledNappy ) );
+    SOILED( new ChangeConfig( "soiled", R.drawable.poo_brown_fill, R.id.rb_soiledNappy ) ),
+    MIXED( new ChangeConfig( "wet and soiled", R.drawable.mixed_nappy, 0 ) );
 
     private final ChangeConfig config;
 
@@ -20,7 +21,7 @@ public enum ChangeTypeEnum {
     public static ChangeTypeEnum getEnum( final String valueToRetrieve ) {
         for ( final ChangeTypeEnum enumVal :
                 Objects.requireNonNull( ChangeTypeEnum.class.getEnumConstants() ) ) {
-            if ( enumVal.getConfig().getDescription().equalsIgnoreCase( valueToRetrieve ) ) {
+            if ( enumVal.name().equalsIgnoreCase( valueToRetrieve ) ) {
                 return enumVal;
             }
         }
